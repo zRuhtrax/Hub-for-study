@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
@@ -56,7 +56,7 @@ function App(){
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v4 · universal</div>
+        <div className="side-foot">v4.1 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -93,7 +93,7 @@ function Home({subjects,onOpen,srs}){
   return <div className="page home-page">
     <section className="hero-grid">
       <div><div className="eyebrow">NEXO</div><h1>Entender primeiro.<br/><em>Conectar depois.</em></h1><p>Um espaço para estudar por mecanismos, relações e recuperação ativa, sem transformar aprendizado em uma coleção de números.</p></div>
-      <div className="overview-panel"><span className="panel-kicker">HOJE</span><strong>{due || '—'}</strong><span>{due===1?'item para revisar':due>1?'itens para revisar':'nenhuma pendência'}</span></div>
+      <div className={`overview-panel ${due ? 'has-due' : 'is-clear'}`}><span className="panel-kicker">HOJE</span><div className="overview-main"><strong>{due || '—'}</strong><span>{due===1?'item para revisar':due>1?'itens para revisar':'nenhuma pendência'}</span></div><span className="overview-note">Recupere primeiro o que está mais próximo de vencer.</span></div>
     </section>
     <section className="section-head"><div><span className="eyebrow">MATÉRIAS</span><h2>Seus estudos</h2></div><span className="section-count">{subjects.length} {subjects.length===1?'matéria':'matérias'}</span></section>
     <div className={`subjects-grid count-${subjects.length} ${subjects.length%2?'odd':''}`}>
@@ -143,18 +143,26 @@ function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQue
 
 function Learn({subject,topicIdx,setTopicIdx}){
   const topic=subject.topics[topicIdx];
+  const firstRender=useRef(true);
+  useEffect(()=>{
+    if(firstRender.current){ firstRender.current=false; return; }
+    requestAnimationFrame(()=>{
+      const title=document.querySelector('.study-pane h2');
+      if(!title) return;
+      const top=title.getBoundingClientRect().top + window.scrollY - (window.innerWidth<=900 ? 118 : 92);
+      window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+    });
+  },[topicIdx]);
   return <div className="learn-layout">
     <aside className="module-index"><div className="module-index-title">Módulos</div>{subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}</aside>
     <div className="study-pane">
       <div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>Aprender</span></div>
       <h2>{topic.title}</h2><p className="topic-sub">{topic.sub}</p>
       <div className="study-content" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html)}} />
-      <div className="module-nav"><button disabled={topicIdx===0} onClick={()=>{setTopicIdx(i=>Math.max(0,i-1));scrollPaneTop()}}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>{setTopicIdx(i=>Math.min(subject.topics.length-1,i+1));scrollPaneTop()}}>Próximo módulo →</button></div>
+      <div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
     </div>
   </div>
 }
-function scrollPaneTop(){ requestAnimationFrame(()=>{document.querySelector('.viewport')?.scrollTo({top:0,behavior:'smooth'}); document.querySelector('.study-pane')?.scrollTo?.({top:0});}); }
-
 function Practice({subject,idx,setIdx,answers,setAnswers}){
   const qs=subject.questions; const q=qs[idx]; const answered=answers[idx];
   return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2></div><span>{idx+1} / {qs.length}</span></div>
@@ -170,12 +178,43 @@ function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.v
 
 function Review({subject,srs,rate,openTerms,setOpenTerms}){
   const cards=subject.flashcards; const keywords=subject.keywords;
+  const [focusId,setFocusId]=useState(null);
+  const focusIndex=focusId===null ? -1 : cards.findIndex(c=>c.id===focusId);
+  const focusCard=focusIndex>=0 ? cards[focusIndex] : null;
+  const closeFocus=()=>setFocusId(null);
+  const stepFocus=(dir)=>{
+    if(!cards.length) return;
+    const next=(focusIndex+dir+cards.length)%cards.length;
+    setFocusId(cards[next].id);
+  };
+  useEffect(()=>{
+    if(focusId===null) return;
+    const onKey=(e)=>{
+      if(e.key==='Escape') closeFocus();
+      if(e.key==='ArrowRight') stepFocus(1);
+      if(e.key==='ArrowLeft') stepFocus(-1);
+    };
+    window.addEventListener('keydown',onKey);
+    return()=>window.removeEventListener('keydown',onKey);
+  },[focusId,focusIndex,cards.length]);
   return <div className="review-pane"><div className="review-hero"><div><span className="eyebrow">REVISAR</span><h2>Recuperar, não reler.</h2><p>Use o esforço de lembrar antes de olhar a resposta.</p></div></div>
-    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">FLASHCARDS</span><h3>Memória ativa</h3></div><span>{cards.length} itens</span></div><div className="flash-grid">{cards.map(c=><Flash key={c.id} card={c} state={srs?.[subject.id]?.flashcards?.[c.id]} onRate={r=>rate(subject.id,'flashcards',c.id,r)}/>)}</div></section>
+    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">FLASHCARDS</span><h3>Memória ativa</h3></div><span>{cards.length} itens</span></div><div className="flash-grid">{cards.map(c=><Flash key={c.id} card={c} state={srs?.[subject.id]?.flashcards?.[c.id]} onOpen={()=>setFocusId(c.id)}/>)}</div></section>
     <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">CONCEITOS</span><h3>Termos essenciais</h3></div><span>{keywords.length} itens</span></div><div className="keyword-list">{keywords.map(k=>{const key=subject.id+':'+k.id; const open=!!openTerms[key]; return <div className={`keyword ${open?'open':''}`} key={k.id}><button onClick={()=>setOpenTerms({...openTerms,[key]:!open})}><span>{k.term}</span><span>＋</span></button><div>{k.def}<div className="keyword-rate"><button onClick={()=>rate(subject.id,'keywords',k.id,false)}>Não lembrei</button><button onClick={()=>rate(subject.id,'keywords',k.id,true)}>Lembrei</button></div></div></div>})}</div></section>
+    {focusCard && <FlashModal card={focusCard} index={focusIndex} total={cards.length} state={srs?.[subject.id]?.flashcards?.[focusCard.id]} onClose={closeFocus} onNext={()=>stepFocus(1)} onPrev={()=>stepFocus(-1)} onRate={remembered=>rate(subject.id,'flashcards',focusCard.id,remembered)} />}
   </div>
 }
-function Flash({card,state,onRate}){const [flip,setFlip]=useState(false);return <div className="flash-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5</div><button className={`flash-face ${flip?'flipped':''}`} onClick={()=>setFlip(!flip)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong></button>{flip&&<div className="flash-actions"><button onClick={()=>onRate(false)}>Não lembrei</button><button onClick={()=>onRate(true)}>Lembrei</button></div>}</div>}
+function Flash({card,state,onOpen}){return <article className="flash-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5</div><button className="flash-face" onClick={onOpen}><span className="flash-label">TENTE LEMBRAR</span><strong>{card.front}</strong><span className="flash-open">Abrir em foco</span></button></article>}
+function FlashModal({card,index,total,state,onClose,onNext,onPrev,onRate}){
+  const [flip,setFlip]=useState(false);
+  useEffect(()=>setFlip(false),[card.id]);
+  return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <div className="flash-modal-panel">
+      <div className="flash-modal-top"><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div>
+      <div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-actions"><button onClick={()=>onRate(false)}>Não lembrei</button><button onClick={()=>onRate(true)}>Lembrei</button></div>}</div>
+      <div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div>
+    </div>
+  </div>
+}
 
 function isDue(sid,kind,id,srs){const x=srs?.[sid]?.[kind]?.[id]; return !x?.due || x.due<=today();}
 function adaptThemeHtml(html){return html.replaceAll('#F8F7F1','var(--diagram-surface)').replaceAll('#374151','var(--diagram-ink)').replaceAll('#5B6472','var(--diagram-muted)').replaceAll('#D7DCE4','var(--diagram-line)').replaceAll('#9AA4B3','var(--diagram-line)').replaceAll('#6B7280','var(--diagram-muted)').replaceAll('#475569','var(--diagram-muted)');}
