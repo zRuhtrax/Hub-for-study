@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v6.1.2';
+const STORAGE = 'nexo:v6.1.3';
 const LEGACY_STORAGES = ['nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -61,7 +61,7 @@ function App(){
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.1.2 · universal</div>
+        <div className="side-foot">v6.1.3 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -227,7 +227,7 @@ function getOptionFeedback(q, originalIndex, feedback){
 function ModuleQuestion({q,answer,onAnswer}){
   if(q.type==='open') return <article className="module-question open-module-question"><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4><textarea value={answer?.value||''} onChange={e=>onAnswer({value:e.target.value,show:false})} placeholder="Responda com suas palavras..."/><button className="module-answer-link" onClick={()=>onAnswer({value:answer?.value||'',show:!answer?.show})}>{answer?.show?'Ocultar resposta-modelo':'Ver resposta-modelo'}</button>{answer?.show&&<div className="module-model"><strong>Uma boa resposta</strong><p>{q.model}</p></div>}</article>;
   const view=stableOptionOrder(q); const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=OPTION_FEEDBACK[q.q]||[];
-  return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===view.correct?'mini-status good':'mini-status bad'}>{chosen===view.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{view.options.map((o,i)=>{const original=view.originalIndex[i];return <button key={i} disabled={revealed} className={`mini-option ${revealed&&i===view.correct?'correct':''} ${revealed&&chosen===i&&i!==view.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>})}</div>{revealed&&<div className="module-feedback"><strong>{chosen===view.correct?'Por quê?':'O ponto a corrigir'}</strong><p>{getOptionFeedback(q,view.originalIndex[chosen],feedback)}</p>{chosen!==view.correct&&<><strong>Resposta correta</strong><p>{getOptionFeedback(q,q.correct,feedback)}</p></>}</div>}</article>
+  return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===view.correct?'mini-status good':'mini-status bad'}>{chosen===view.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{view.options.map((o,i)=>{const original=view.originalIndex[i];return <button key={i} disabled={revealed} className={`mini-option ${revealed&&i===view.correct?'correct':''} ${revealed&&chosen===i&&i!==view.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>})}</div>{revealed&&<div className={`module-feedback ${chosen===view.correct?'is-correct':'is-wrong'}`}><strong>{chosen===view.correct?'Correto · Por quê?':'Sua resposta · o que revisar'}</strong><p>{getOptionFeedback(q,view.originalIndex[chosen],feedback)}</p>{chosen!==view.correct&&<><strong className="feedback-answer-label">Resposta correta</strong><p>{getOptionFeedback(q,q.correct,feedback)}</p></>}</div>}</article>
 }
 
 function Practice({subject,idx,setIdx,answers,setAnswers}){

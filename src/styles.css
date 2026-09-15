@@ -1384,3 +1384,306 @@
   .study-content .diagram.visual-lesson{margin-top:38px!important;margin-bottom:46px!important;}
   .enso-state{padding:20px 17px 23px!important;}
 }
+
+
+/* =========================================================
+   NEXO v6.1.3 - layout lock + visual lesson redesign
+   ========================================================= */
+:root{
+  --reading-gutter:clamp(42px,4.5vw,88px);
+}
+
+/* Fixed navigation rail: content scrolls, rail does not. */
+.shell{display:block!important;min-height:100vh!important;}
+.sidebar{
+  position:fixed!important;
+  inset:0 auto 0 0!important;
+  width:260px!important;
+  height:100vh!important;
+  max-height:100vh!important;
+  z-index:40!important;
+  overflow-y:auto!important;
+  overflow-x:visible!important;
+  border-right:1px solid var(--line)!important;
+  transition:width .2s ease!important;
+}
+.main{
+  margin-left:260px!important;
+  min-width:0!important;
+  transition:margin-left .2s ease!important;
+}
+.sidebar-collapsed .sidebar{width:76px!important;}
+.sidebar-collapsed .main{margin-left:76px!important;}
+.sidebar-toggle{top:126px!important;right:8px!important;}
+.sidebar-collapsed .sidebar-toggle{top:88px!important;right:7px!important;}
+
+/* More of the screen is actually useful when a rail is collapsed. */
+.viewport{max-width:none!important;padding-left:30px!important;padding-right:30px!important;}
+.viewport>.page{max-width:1500px!important;width:100%!important;}
+.sidebar-collapsed .viewport{padding-left:24px!important;padding-right:24px!important;}
+
+/* Shared study grid. */
+.learn-layout{grid-template-columns:216px minmax(0,1fr)!important;gap:20px!important;align-items:start!important;}
+.learn-layout.modules-collapsed{grid-template-columns:54px minmax(0,1fr)!important;gap:14px!important;}
+.study-pane{min-width:0!important;width:100%!important;}
+.study-intro{padding-right:clamp(16px,2vw,32px)!important;}
+.study-content.new-study-surface{
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:48px var(--reading-gutter) 38px!important;
+  border-radius:18px!important;
+  overflow:visible!important;
+}
+.modules-collapsed .study-content.new-study-surface{
+  padding-left:clamp(54px,6.5vw,112px)!important;
+  padding-right:clamp(54px,5vw,92px)!important;
+}
+.study-content.new-study-surface>p,
+.study-content.new-study-surface>ul,
+.study-content.new-study-surface>h4,
+.study-content.new-study-surface>.idea-box,
+.study-content.new-study-surface>.why-box,
+.study-content.new-study-surface>.connection-box,
+.study-content.new-study-surface>.warning-box,
+.study-content.new-study-surface>.diagram,
+.study-content.new-study-surface>.compare-grid,
+.study-content.new-study-surface>.concept-grid,
+.study-content.new-study-surface>.module-check{max-width:1180px!important;margin-left:0!important;margin-right:0!important;}
+.study-content.new-study-surface>p,
+.study-content.new-study-surface>li,
+.study-content.new-study-surface>ul{font-size:17px!important;line-height:1.82!important;}
+.study-content.new-study-surface>h4{margin-top:64px!important;padding-top:26px!important;font-size:29px!important;}
+
+/* Visual lessons no longer behave like a generic card. */
+.study-content .diagram.visual-lesson{
+  max-width:none!important;
+  width:100%!important;
+  margin:62px 0 68px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:visible!important;
+}
+.visual-head{
+  padding:0 0 20px!important;
+  border-top:1px solid var(--reading-line)!important;
+  padding-top:24px!important;
+}
+.visual-kicker{
+  margin-bottom:8px!important;
+  font-size:10px!important;
+  letter-spacing:.17em!important;
+  font-weight:900!important;
+  color:var(--accent)!important;
+}
+.visual-title{
+  margin:0!important;
+  max-width:900px!important;
+  font-size:clamp(23px,2.4vw,34px)!important;
+  line-height:1.08!important;
+  letter-spacing:-.035em!important;
+  color:var(--reading-heading)!important;
+}
+.visual-body{
+  padding:20px clamp(18px,2.8vw,52px) 10px!important;
+  min-width:0!important;
+}
+.diagram-cap{
+  max-width:980px!important;
+  margin:0!important;
+  padding:20px 0 0!important;
+  border-top:1px solid var(--reading-line)!important;
+  font-size:12px!important;
+  line-height:1.7!important;
+  color:var(--reading-muted)!important;
+}
+
+/* Give actual explanatory blocks an internal reading gutter. */
+.study-content .idea-box,
+.study-content .why-box,
+.study-content .connection-box,
+.study-content .warning-box{
+  padding:22px 28px!important;
+  border-radius:12px!important;
+  margin-top:28px!important;
+  margin-bottom:32px!important;
+}
+.study-content .concept,
+.study-content .compare{
+  min-width:0!important;
+  padding:26px 30px!important;
+  overflow-wrap:anywhere!important;
+}
+.study-content .concept+.concept,
+.study-content .compare+.compare{padding-left:30px!important;}
+.study-content .cause-step{padding:24px 28px!important;min-width:0!important;}
+
+/* Module navigation: quiet conventional chevrons. */
+.module-collapse-btn.icon-only{border:0!important;background:transparent!important;box-shadow:none!important;width:28px!important;height:28px!important;border-radius:6px!important;color:var(--muted)!important;}
+.module-collapse-btn.icon-only:hover{background:var(--surface-2)!important;color:var(--ink)!important;}
+.module-collapse-btn span{font-size:14px!important;line-height:1!important;}
+
+/* New diagrams ------------------------------------------------ */
+.scale-compare{display:grid;grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);gap:20px;align-items:center;}
+.scale-panel{min-width:0;padding:24px;border:1px solid var(--reading-line);background:var(--reading-soft);border-radius:14px;}
+.scale-panel-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:26px;}
+.scale-panel-head b{font-size:12px;letter-spacing:.12em;color:var(--reading-heading);}
+.scale-panel-head span{font-size:11px;color:var(--reading-muted);}
+.now-track{min-height:150px;display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;position:relative;}
+.now-line{height:2px;background:var(--diagram-line);position:relative;}
+.now-dot{width:22px;height:22px;border-radius:50%;background:var(--diagram-blue);box-shadow:0 0 0 7px color-mix(in srgb,var(--diagram-blue) 12%,transparent);justify-self:center;}
+.now-track div{grid-column:2;display:grid;gap:4px;}
+.now-track strong{font-size:19px;color:var(--reading-heading);}
+.now-track small{font-size:12px;color:var(--reading-muted);}
+.scale-divider{display:grid;place-items:center;}
+.scale-divider span{writing-mode:vertical-rl;text-transform:uppercase;letter-spacing:.13em;font-size:9px;color:var(--muted);}
+.series-track{min-height:150px;display:grid;align-items:center;}
+.series-track svg{width:100%;height:auto;display:block;}
+.series-axis{display:flex;justify-content:space-between;font-size:10px;color:var(--reading-muted);margin-bottom:4px;}
+.paired-chart-v3{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.chart-card{padding:22px;border:1px solid var(--reading-line);background:var(--reading-soft);border-radius:14px;min-width:0;}
+.chart-card-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:12px;}
+.chart-card-head b{font-size:12px;letter-spacing:.1em;color:var(--reading-heading);}
+.chart-card-head span{font-size:11px;color:var(--reading-muted);}
+.pressure-map{display:grid;grid-template-columns:160px minmax(0,1fr) 160px;gap:16px;align-items:center;padding:28px 10px;}
+.pressure-field{min-height:150px;border-radius:50%;display:grid;place-items:center;align-content:center;gap:4px;border:2px solid currentColor;}
+.pressure-field span{font-size:18px;font-weight:900;letter-spacing:.05em;}
+.pressure-field small{font-size:10px;color:var(--reading-muted);}
+.pressure-field.high{color:var(--diagram-blue);background:var(--diagram-blue-soft);}
+.pressure-field.low{color:var(--diagram-amber);background:var(--diagram-amber-soft);}
+.pressure-river{text-align:center;min-width:0;}
+.pressure-river svg{width:100%;height:auto;display:block;}
+.pressure-river span{display:block;color:var(--reading-heading);font-size:12px;font-weight:800;margin-top:6px;}
+.pressure-river small{display:block;color:var(--reading-muted);font-size:10px;margin-top:3px;}
+.atmosphere-profile{display:grid;grid-template-columns:70px minmax(0,1fr) 220px;gap:16px;align-items:stretch;}
+.atm-scale{display:flex;flex-direction:column;justify-content:space-between;padding:6px 0 7px;font-size:10px;color:var(--reading-muted);text-align:right;}
+.atm-stack{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.atm-layer{display:grid!important;grid-template-columns:minmax(100px,180px) minmax(0,1fr);gap:16px;align-items:center;padding:16px 20px!important;min-height:64px!important;border:1px solid var(--reading-line)!important;border-radius:8px!important;background:var(--reading-soft)!important;min-width:0!important;}
+.atm-layer b{font-size:13px;color:var(--reading-heading)!important;}
+.atm-layer span{font-size:11px;color:var(--reading-muted)!important;line-height:1.45;min-width:0;}
+.atm-layer.tropo{background:color-mix(in srgb,var(--diagram-blue-soft) 70%,var(--reading-soft))!important;border-left:4px solid var(--diagram-blue)!important;}
+.atm-layer.strato{border-left:4px solid var(--diagram-purple-ink)!important;}
+.atm-layer.meso{border-left:4px solid var(--diagram-amber)!important;}
+.atm-layer.thermo{border-left:4px solid var(--diagram-green)!important;}
+.atm-layer.exo{border-left:4px solid var(--diagram-blue-ink)!important;}
+.temp-profile{border-left:1px solid var(--reading-line);padding-left:22px;min-width:0;}
+.temp-profile svg{width:100%;height:auto;display:block;}
+.temp-title{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--reading-muted);margin-bottom:6px;}
+.energy-factors svg{width:100%;height:auto;display:block;}
+.global-circulation svg{width:100%;height:auto;display:block;}
+.lat-band{display:flex;justify-content:space-between;font-size:9px;color:var(--reading-muted);margin:0 6% 4px;}
+.circulation-legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:14px;font-size:10px;color:var(--reading-muted);}
+.legend-sample{display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--diagram-blue);}
+.legend-sample.sink{background:var(--diagram-amber);}
+.legend-sample.cell{background:var(--diagram-green);}
+.front-study{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.front-case{padding:22px 26px;min-width:0;}
+.front-case+.front-case{border-left:1px solid var(--reading-line);}
+.front-case header{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:12px;}
+.front-case header b{font-size:11px;letter-spacing:.11em;color:var(--reading-heading);}
+.front-case header span{font-size:10px;color:var(--reading-muted);}
+.front-case svg{width:100%;height:auto;display:block;}
+.front-case p{font-size:12px!important;line-height:1.65!important;color:var(--reading-muted)!important;margin:14px 0 0!important;}
+.front-note{margin-top:10px;padding:14px 0 0;border-top:1px solid var(--reading-line);display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:start;}
+.front-note span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:900;}
+.front-note p{margin:0;color:var(--reading-muted);font-size:10px;line-height:1.6;}
+.enso-system{min-width:0;}
+.enso-head{display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;font-size:9px;color:var(--reading-muted);letter-spacing:.09em;text-transform:uppercase;align-items:center;padding:0 10px 10px;}
+.enso-head b{text-align:center;color:var(--reading-heading);}
+.enso-head span:last-child{text-align:right;}
+.enso-states-v3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--reading-line);border-radius:14px;overflow:hidden;}
+.enso-state-v3{min-width:0;padding:20px;background:var(--reading-soft);}
+.enso-state-v3+.enso-state-v3{border-left:1px solid var(--reading-line);}
+.enso-state-v3 header{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:10px;}
+.enso-state-v3 header b{font-size:11px;letter-spacing:.1em;color:var(--reading-heading);}
+.enso-state-v3 header span{font-size:9px;color:var(--reading-muted);}
+.enso-state-v3 svg{width:100%;height:auto;display:block;}
+.enso-state-v3 p{margin:11px 0 0!important;font-size:11px!important;line-height:1.6!important;color:var(--reading-muted)!important;}
+.cyclone-cross svg{width:100%;height:auto;display:block;}
+.cyclone-conditions-v2{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--reading-line);margin-top:12px;}
+.cyclone-conditions-v2 span{padding:14px 16px;color:var(--reading-muted);font-size:10px;line-height:1.5;}
+.cyclone-conditions-v2 span+span{border-left:1px solid var(--reading-line);}
+.cyclone-conditions-v2 b{display:block;color:var(--reading-heading);font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
+.greenhouse-flow svg{width:100%;height:auto;display:block;}
+.greenhouse-key{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-top:10px;font-size:10px;color:var(--reading-muted);}
+.key-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:var(--diagram-amber);}
+.key-dot.ir{background:var(--diagram-red-ink);}
+.key-dot.atm{background:var(--diagram-purple-ink);}
+.climate-chain-v3{display:grid;grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr) 36px minmax(0,1fr) 36px minmax(0,1fr);align-items:stretch;gap:0;}
+.climate-chain-v3 article{min-width:0;padding:22px 20px;background:var(--reading-soft);border:1px solid var(--reading-line);border-radius:12px;}
+.climate-chain-v3 article span{display:block;color:var(--accent);font-size:10px;letter-spacing:.12em;font-weight:900;margin-bottom:11px;}
+.climate-chain-v3 article b{display:block;color:var(--reading-heading);font-size:14px;line-height:1.2;}
+.climate-chain-v3 article p{margin:8px 0 0!important;font-size:11px!important;line-height:1.55!important;color:var(--reading-muted)!important;}
+.climate-chain-v3 i{display:grid;place-items:center;font-style:normal;color:var(--accent);font-size:18px;}
+
+/* Retrieval/practice answers: blue means correct, red means wrong. */
+.option.correct,.mini-option.correct{
+  border-color:var(--accent)!important;
+  background:color-mix(in srgb,var(--accent) 16%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px var(--accent),0 0 26px color-mix(in srgb,var(--accent) 15%,transparent)!important;
+  opacity:1!important;
+}
+.option.correct>span,.mini-option.correct>span,.feedback-answer-label{color:var(--accent)!important;}
+.option.wrong,.mini-option.wrong{
+  border-color:var(--danger)!important;
+  background:color-mix(in srgb,var(--danger) 15%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px var(--danger),0 0 24px color-mix(in srgb,var(--danger) 12%,transparent)!important;
+  opacity:1!important;
+}
+.option.wrong>span,.mini-option.wrong>span{color:var(--danger)!important;}
+.module-feedback.is-correct{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;box-shadow:0 0 22px color-mix(in srgb,var(--accent) 9%,transparent)!important;}
+.module-feedback.is-wrong{border-color:color-mix(in srgb,var(--danger) 50%,var(--line))!important;box-shadow:0 0 22px color-mix(in srgb,var(--danger) 8%,transparent)!important;}
+.feedback.is-correct{border-left-color:var(--accent)!important;}
+.feedback.is-wrong{border-left-color:var(--danger)!important;}
+
+/* Review cards retain four columns, but focus panel gets more visual weight. */
+.flash-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;}
+.flash-face{min-height:228px!important;}
+.flash-modal-panel{width:min(1100px,94vw)!important;}
+
+@media(max-width:1150px){
+  .scale-compare{grid-template-columns:1fr;gap:10px;}
+  .scale-divider{height:24px;}
+  .scale-divider span{writing-mode:horizontal-tb;}
+  .pressure-map{grid-template-columns:1fr;gap:10px;}
+  .pressure-field{width:min(220px,70%);margin:0 auto;}
+  .atmosphere-profile{grid-template-columns:52px minmax(0,1fr);}
+  .temp-profile{grid-column:2;border-left:0;border-top:1px solid var(--reading-line);padding:18px 0 0;}
+  .temp-profile svg{max-height:150px;}
+  .front-study{grid-template-columns:1fr;}
+  .front-case+.front-case{border-left:0;border-top:1px solid var(--reading-line);}
+  .enso-states-v3{grid-template-columns:1fr;}
+  .enso-state-v3+.enso-state-v3{border-left:0;border-top:1px solid var(--reading-line);}
+  .climate-chain-v3{grid-template-columns:1fr;gap:0;}
+  .climate-chain-v3 i{height:28px;transform:rotate(90deg);}
+}
+@media(max-width:900px){
+  .sidebar{display:none!important;}
+  .main,.sidebar-collapsed .main{margin-left:0!important;}
+  .viewport,.sidebar-collapsed .viewport{padding-left:18px!important;padding-right:18px!important;}
+  .learn-layout,.learn-layout.modules-collapsed{display:block!important;}
+  .module-index{position:sticky!important;top:62px!important;width:100%!important;z-index:9!important;border-right:0!important;border-bottom:1px solid var(--line)!important;background:color-mix(in srgb,var(--bg) 96%,transparent)!important;backdrop-filter:blur(10px)!important;}
+  .study-content.new-study-surface{padding:34px 22px 28px!important;}
+  .modules-collapsed .study-content.new-study-surface{padding:34px 22px 28px!important;}
+  .visual-body{padding-inline:8px!important;}
+  .paired-chart-v3{grid-template-columns:1fr;}
+  .energy-factors svg,.global-circulation svg,.greenhouse-flow svg,.cyclone-cross svg{width:100%;}
+  .enso-head{grid-template-columns:1fr 1fr;}
+  .enso-head b{display:none;}
+  .cyclone-conditions-v2{grid-template-columns:1fr;}
+  .cyclone-conditions-v2 span+span{border-left:0;border-top:1px solid var(--reading-line);}
+  .front-note{grid-template-columns:1fr;gap:7px;}
+}
+@media(max-width:560px){
+  .study-content.new-study-surface{padding:28px 16px 24px!important;}
+  .visual-head{padding-top:20px!important;}
+  .visual-title{font-size:22px!important;}
+  .visual-body{padding-inline:0!important;}
+  .diagram-cap{font-size:11px!important;}
+  .atm-layer{grid-template-columns:1fr!important;gap:5px!important;padding:14px 15px!important;}
+  .atm-scale{display:none;}
+  .atmosphere-profile{display:block;}
+  .temp-profile{margin-top:10px;}
+  .climate-chain-v3 article{padding:18px 17px;}
+}
