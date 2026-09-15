@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v5';
+const STORAGE = 'nexo:v6';
 const LEGACY_STORAGE = 'nexo:v4';
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -147,13 +147,13 @@ function Settings({uiMode,setUiMode,theme,setTheme}){
 }
 function Choice({active,onClick,icon,title,desc}){return <button className={`choice ${active?'active':''}`} onClick={onClick}><span className="choice-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span>{active && <b>✓</b>}</button>}
 
-function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rate,openTerms,setOpenTerms}){
+function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rateFlashcard,openTerms,setOpenTerms}){
   return <div className="page subject-page">
     <div className="subject-head"><div><span className="eyebrow">{subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.length}</strong><span>módulos</span></div></div>
     <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
     {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
     {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
-    {tab==='review' && <Review subject={subject} srs={srs} rateFlashcard={rate} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
+    {tab==='review' && <Review subject={subject} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
   </div>
 }
 
@@ -185,6 +185,12 @@ function Learn({subject,topicIdx,setTopicIdx}){
         {subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
       </div>
     </aside>
+    <div className="mobile-module-picker">
+      <label htmlFor="module-picker">Módulo atual</label>
+      <select id="module-picker" value={topicIdx} onChange={e=>setTopicIdx(Number(e.target.value))}>
+        {subject.topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
+      </select>
+    </div>
     <div className="study-pane">
       <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
       <div className="study-intro">
