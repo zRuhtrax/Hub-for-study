@@ -40,7 +40,7 @@ Depois de um push na branch `main`, o site será publicado em:
 A autenticação desta versão é apenas local e funciona neste dispositivo por meio de `localStorage`. Ela não é uma autenticação de produção nem sincroniza contas entre dispositivos.
 
 
-## v5.0 - arquitetura de estudo
+## v6.0 - arquitetura de estudo
 
 A interface de Aprender foi reorganizada como uma superfície editorial de estudo, com segmentação, sinalização e maior proximidade entre texto e representação visual. A proposta segue princípios de design multimídia associados à redução de carga extrínseca e à segmentação do conteúdo.
 
