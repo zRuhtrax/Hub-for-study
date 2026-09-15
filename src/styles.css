@@ -950,3 +950,437 @@
   .flash-modal-panel{width:100%!important;padding:14px!important;}
   .flash-face-large{min-height:48vh!important;}
 }
+
+/* =========================================================
+   NEXO v6.1.2 - navigation stability + study sheet refinement
+   ========================================================= */
+
+/* Sidebar stays in place while the study viewport scrolls. */
+.sidebar{
+  position:sticky!important;
+  top:0!important;
+  height:100vh!important;
+  align-self:start!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+.sidebar-toggle{
+  top:96px!important;
+  right:10px!important;
+  z-index:25!important;
+}
+.brand{
+  padding-right:44px!important;
+}
+.sidebar-collapsed .brand{
+  padding-right:0!important;
+}
+.sidebar-collapsed .sidebar-toggle{
+  top:96px!important;
+  right:7px!important;
+}
+
+/* One shared horizontal rhythm for every page. */
+.viewport{
+  width:100%!important;
+  max-width:none!important;
+}
+.viewport>.page{
+  width:100%!important;
+  max-width:1480px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+.sidebar-collapsed .viewport{
+  padding-left:22px!important;
+  padding-right:22px!important;
+}
+.subject-page,.home-page,.disciplines-page,.settings-page{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+
+/* Learning width expands instead of merely inheriting the sidebar gain. */
+.learn-layout{
+  grid-template-columns:218px minmax(0,1fr)!important;
+  gap:22px!important;
+}
+.learn-layout.modules-collapsed{
+  grid-template-columns:58px minmax(0,1fr)!important;
+  gap:12px!important;
+}
+.modules-collapsed .module-index{
+  width:58px!important;
+  padding-right:6px!important;
+}
+.modules-collapsed .module-index-list button{
+  padding:11px 2px!important;
+}
+.modules-collapsed .study-content.new-study-surface{
+  padding-left:clamp(42px,4.6vw,76px)!important;
+  padding-right:clamp(42px,4.6vw,76px)!important;
+}
+
+/* Conventional, quiet collapse control. */
+.module-collapse-btn.icon-only{
+  width:26px!important;
+  height:26px!important;
+  border:1px solid var(--line)!important;
+  border-radius:7px!important;
+  font-size:0!important;
+}
+.module-collapse-btn .sidebar-chevron,
+.module-collapse-btn span{
+  font-size:16px!important;
+  font-family:Arial,sans-serif!important;
+  font-weight:400!important;
+  line-height:1!important;
+}
+
+/* Study sheet: consistent internal margins for every geometric block. */
+.study-content.new-study-surface{
+  width:100%!important;
+  max-width:none!important;
+  padding:54px clamp(36px,4.2vw,70px)!important;
+  border-radius:18px!important;
+  overflow:visible!important;
+}
+.study-content.new-study-surface>p,
+.study-content.new-study-surface>ul,
+.study-content.new-study-surface>ol{
+  max-width:1000px!important;
+}
+.study-content.new-study-surface .idea-box,
+.study-content.new-study-surface .why-box,
+.study-content.new-study-surface .connection-box,
+.study-content.new-study-surface .warning-box{
+  box-sizing:border-box!important;
+  padding:23px 28px!important;
+  margin:30px 0!important;
+  max-width:1000px!important;
+  border-left:3px solid var(--accent)!important;
+}
+.study-content.new-study-surface .cause-chain{
+  width:100%!important;
+  max-width:1060px!important;
+  gap:8px!important;
+}
+.study-content.new-study-surface .cause-step{
+  padding:22px 24px!important;
+  min-width:0!important;
+}
+.study-content.new-study-surface .concept-grid,
+.study-content.new-study-surface .compare-grid{
+  width:100%!important;
+  max-width:1060px!important;
+}
+.study-content.new-study-surface .concept,
+.study-content.new-study-surface .compare{
+  min-width:0!important;
+  padding:23px 26px!important;
+  overflow-wrap:anywhere!important;
+}
+.study-content.new-study-surface .concept:first-child,
+.study-content.new-study-surface .compare:first-child{
+  padding-left:0!important;
+}
+.study-content.new-study-surface .concept:last-child,
+.study-content.new-study-surface .compare:last-child{
+  padding-right:0!important;
+}
+.study-content.new-study-surface .diagram.visual-lesson{
+  width:100%!important;
+  max-width:1120px!important;
+  margin:56px 0 68px!important;
+  padding:0 0 26px!important;
+  overflow:visible!important;
+}
+.study-content.new-study-surface .visual-kicker{
+  padding-top:20px!important;
+  padding-left:2px!important;
+}
+.study-content.new-study-surface .visual-title{
+  margin:8px 0 26px!important;
+  max-width:940px!important;
+}
+.study-content.new-study-surface .diagram-cap{
+  max-width:960px!important;
+  padding:15px 2px 0!important;
+}
+
+/* Neutral dark reading surfaces: remove the greenish panel cast. */
+.theme-dark .study-content.new-study-surface .idea-box,
+.theme-dark .study-content.new-study-surface .why-box,
+.theme-dark .study-content.new-study-surface .connection-box,
+.theme-dark .study-content.new-study-surface .warning-box{
+  background:#171c22!important;
+  border-color:#303943!important;
+  border-left-color:#6f8cff!important;
+}
+.theme-dark .study-content.new-study-surface .cause-step,
+.theme-dark .study-content.new-study-surface .concept,
+.theme-dark .study-content.new-study-surface .compare,
+.theme-dark .study-content.new-study-surface .diagram{
+  background:#151a20!important;
+  border-color:#303943!important;
+}
+.theme-dark .study-content.new-study-surface .cause-link{
+  color:#7fa0ff!important;
+}
+.theme-dark .study-content.new-study-surface .visual-kicker{
+  color:#83a2ff!important;
+}
+.theme-dark .study-content.new-study-surface .diagram-cap{
+  color:#aeb7c1!important;
+}
+
+/* Blue is the main interaction color; reserve green/red for semantic states. */
+:root{
+  --answer-blue:#7fa1ff;
+  --answer-blue-strong:#9bb5ff;
+}
+.app.theme-light{
+  --answer-blue:#4267c7;
+  --answer-blue-strong:#3155b2;
+}
+.option.correct{
+  border-color:var(--answer-blue)!important;
+  background:color-mix(in srgb,var(--answer-blue) 16%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px var(--answer-blue),0 12px 26px color-mix(in srgb,var(--answer-blue) 12%,transparent)!important;
+}
+.option.correct em{
+  color:var(--ink)!important;
+}
+.option.wrong{
+  border-color:#db5965!important;
+  background:color-mix(in srgb,#db5965 13%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px #db5965,0 12px 26px color-mix(in srgb,#db5965 10%,transparent)!important;
+}
+.feedback-correct b{
+  color:var(--answer-blue)!important;
+}
+.model-answer{
+  border-color:var(--answer-blue)!important;
+  border-left-color:var(--answer-blue)!important;
+}
+.mini-option.correct{
+  border-color:var(--answer-blue)!important;
+  background:color-mix(in srgb,var(--answer-blue) 15%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px var(--answer-blue)!important;
+}
+.mini-option.wrong{
+  border-color:#db5965!important;
+  background:color-mix(in srgb,#db5965 13%,var(--surface-2))!important;
+  box-shadow:inset 0 0 0 2px #db5965!important;
+}
+.mini-status.good{color:var(--answer-blue)!important}
+
+/* More breathing room inside visual compositions. */
+.visual-split,
+.pressure-visual,
+.factor-grid,
+.front-compare-v2{
+  min-width:0!important;
+}
+.front-card-label{
+  padding:0 0 10px!important;
+  letter-spacing:.11em!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+.front-card p{
+  max-width:520px!important;
+  margin:16px 0 0!important;
+  line-height:1.6!important;
+  color:var(--reading-muted)!important;
+}
+.front-diagram{
+  position:relative!important;
+  min-height:250px!important;
+  margin-top:4px!important;
+  border-top:1px solid var(--reading-line)!important;
+  border-bottom:1px solid var(--reading-line)!important;
+  overflow:hidden!important;
+}
+.front-diagram .air{
+  position:absolute!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.08em!important;
+}
+.front-diagram .warm-air{
+  color:var(--diagram-red-ink)!important;
+  background:color-mix(in srgb,var(--diagram-red-soft) 64%,transparent)!important;
+}
+.front-diagram .cold-air{
+  color:var(--diagram-blue-ink)!important;
+  background:color-mix(in srgb,var(--diagram-blue-soft) 64%,transparent)!important;
+}
+.front-diagram .cold-boundary{
+  position:absolute!important;
+  left:12%!important;
+  bottom:24%!important;
+  width:64%!important;
+  height:2px!important;
+  background:var(--diagram-blue)!important;
+  transform:rotate(-28deg)!important;
+  transform-origin:left center!important;
+}
+.front-diagram .warm-boundary{
+  position:absolute!important;
+  left:18%!important;
+  bottom:27%!important;
+  width:67%!important;
+  height:2px!important;
+  background:var(--diagram-red-ink)!important;
+  transform:rotate(-11deg)!important;
+  transform-origin:left center!important;
+}
+.front-diagram.cold .cold-air{
+  inset:auto 0 0 0!important;height:43%!important;
+}
+.front-diagram.cold .warm-air{
+  inset:0 0 33% 24%!important;clip-path:polygon(0 0,100% 0,72% 100%,0 100%)!important;
+}
+.front-diagram.warm .cold-air{
+  inset:auto 0 0 0!important;height:36%!important;
+}
+.front-diagram.warm .warm-air{
+  inset:8% 0 32% 0!important;clip-path:polygon(0 80%,100% 0,100% 100%,0 100%)!important;
+}
+.front-diagram .cloud{
+  position:absolute!important;
+  width:70px!important;height:28px!important;border-radius:999px!important;
+  background:var(--diagram-surface)!important;
+  border:1px solid var(--diagram-line)!important;
+  top:34%!important;
+}
+.front-diagram .cloud:before,
+.front-diagram .cloud:after{
+  content:"";position:absolute;border-radius:50%;background:inherit;border:1px solid var(--diagram-line);
+}
+.front-diagram .cloud:before{width:28px;height:28px;left:12px;top:-12px}
+.front-diagram .cloud:after{width:22px;height:22px;left:34px;top:-8px}
+.front-diagram .cloud-1{left:34%!important}
+.front-diagram .cloud-2{left:62%!important;top:46%!important;transform:scale(.78)!important}
+
+/* ENSO: make the three states visually comparable rather than text-heavy. */
+.enso-v2{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  border-top:1px solid var(--reading-line)!important;
+  border-bottom:1px solid var(--reading-line)!important;
+}
+.enso-state{
+  min-width:0!important;
+  padding:24px 24px 28px!important;
+  background:var(--reading-soft)!important;
+}
+.enso-state+.enso-state{
+  border-left:1px solid var(--reading-line)!important;
+}
+.enso-state .state-title{
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.13em!important;
+  color:var(--reading-heading)!important;
+  margin-bottom:16px!important;
+}
+.enso-state .pacific-map{
+  position:relative!important;
+  height:150px!important;
+  border:1px solid var(--reading-line)!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  background:linear-gradient(to bottom,transparent 0 44%,color-mix(in srgb,var(--diagram-blue) 20%,transparent) 44% 58%,transparent 58%)!important;
+}
+.enso-state .pacific-map:before{
+  content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:var(--reading-line);
+}
+.enso-state .pacific-map .south-america{
+  position:absolute!important;right:7%!important;top:12%!important;font-size:8px!important;font-weight:900!important;writing-mode:vertical-rl!important;color:var(--diagram-muted)!important;
+}
+.enso-state .pacific-map .west{
+  position:absolute!important;left:8%!important;bottom:15%!important;font-size:9px!important;font-weight:900!important;color:var(--diagram-ink)!important;
+}
+.enso-state .pacific-map .east{
+  position:absolute!important;right:8%!important;bottom:15%!important;font-size:9px!important;font-weight:900!important;color:var(--diagram-ink)!important;text-align:right!important;
+}
+.enso-state .pacific-map .trade-arrow{
+  position:absolute!important;left:25%!important;right:24%!important;top:43%!important;text-align:center!important;font-size:17px!important;letter-spacing:.16em!important;color:var(--diagram-amber)!important;
+}
+.enso-state .pacific-map .trade-arrow.weak{opacity:.55!important}
+.enso-state .pacific-map .trade-arrow.strong{font-size:19px!important}
+.enso-state .pacific-map .upwelling{
+  position:absolute!important;right:22%!important;bottom:28%!important;color:var(--diagram-blue)!important;font-size:23px!important;font-weight:900!important;
+}
+.enso-state .pacific-map .upwelling.low{opacity:.5!important}
+.enso-state .pacific-map .upwelling.high{font-size:26px!important}
+.enso-state p{
+  margin:15px 0 0!important;
+  font-size:12px!important;
+  line-height:1.6!important;
+  color:var(--reading-muted)!important;
+}
+
+/* Energy diagram: separate mechanism into an actual visual path. */
+.study-content .factor-core{
+  min-height:190px!important;
+  padding:24px!important;
+  border:1px solid var(--reading-line)!important;
+  background:var(--reading-soft)!important;
+}
+.study-content .factor-path>div{
+  min-height:90px!important;
+  padding:18px 20px!important;
+  border:1px solid var(--reading-line)!important;
+  background:var(--reading-soft)!important;
+}
+.study-content .factor-path>div+div{
+  border-left:0!important;
+}
+
+/* Responsive refinements. */
+@media(max-width:1100px){
+  .learn-layout,.learn-layout.modules-collapsed{gap:16px!important;}
+  .study-content.new-study-surface{padding-left:32px!important;padding-right:32px!important;}
+  .study-content.new-study-surface .concept-grid,
+  .study-content.new-study-surface .compare-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .study-content.new-study-surface .concept:nth-child(2n),
+  .study-content.new-study-surface .compare:nth-child(2n){border-right:0!important;}
+  .study-content.new-study-surface .concept:nth-child(n+3),
+  .study-content.new-study-surface .compare:nth-child(n+3){border-top:1px solid var(--reading-line)!important;}
+  .enso-v2{grid-template-columns:1fr!important;}
+  .enso-state+.enso-state{border-left:0!important;border-top:1px solid var(--reading-line)!important;}
+}
+@media(max-width:900px){
+  .sidebar{position:static!important;height:auto!important;overflow:visible!important;}
+  .sidebar-toggle{display:none!important;}
+  .study-content.new-study-surface{padding:34px 26px!important;}
+  .study-content.new-study-surface .idea-box,
+  .study-content.new-study-surface .why-box,
+  .study-content.new-study-surface .connection-box,
+  .study-content.new-study-surface .warning-box{padding:20px 22px!important;}
+  .study-content.new-study-surface .cause-chain{grid-template-columns:1fr!important;}
+  .study-content.new-study-surface .cause-link{padding:5px 0!important;text-align:center!important;}
+  .study-content.new-study-surface .concept-grid,
+  .study-content.new-study-surface .compare-grid{grid-template-columns:1fr!important;}
+  .study-content.new-study-surface .concept,
+  .study-content.new-study-surface .compare{border-right:0!important;border-top:1px solid var(--reading-line)!important;padding:20px 0!important;}
+  .study-content.new-study-surface .concept:first-child,
+  .study-content.new-study-surface .compare:first-child{border-top:0!important;}
+  .study-content .diagram.visual-lesson{margin-top:44px!important;margin-bottom:54px!important;}
+  .front-compare-v2{grid-template-columns:1fr!important;}
+  .front-card+.front-card{border-top:1px solid var(--reading-line)!important;padding-top:28px!important;margin-top:28px!important;}
+}
+@media(max-width:560px){
+  .study-content.new-study-surface{padding:28px 20px!important;}
+  .study-content.new-study-surface .idea-box,
+  .study-content.new-study-surface .why-box,
+  .study-content.new-study-surface .connection-box,
+  .study-content.new-study-surface .warning-box{padding:18px 19px!important;}
+  .study-content .diagram.visual-lesson{margin-top:38px!important;margin-bottom:46px!important;}
+  .enso-state{padding:20px 17px 23px!important;}
+}

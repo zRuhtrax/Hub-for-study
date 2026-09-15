@@ -3,11 +3,19 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v6.1.1';
-const LEGACY_STORAGE = 'nexo:v4';
+const STORAGE = 'nexo:v6.1.2';
+const LEGACY_STORAGES = ['nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
-const load = (k, fallback) => { try { const current = localStorage.getItem(`${STORAGE}:${k}`); if (current) return JSON.parse(current); const legacy = localStorage.getItem(`${LEGACY_STORAGE}:${k}`); return legacy ? JSON.parse(legacy) : fallback; } catch { return fallback; } };
+const load = (k, fallback) => { try {
+  const current = localStorage.getItem(`${STORAGE}:${k}`);
+  if (current) return JSON.parse(current);
+  for (const legacyStorage of LEGACY_STORAGES) {
+    const legacy = localStorage.getItem(`${legacyStorage}:${k}`);
+    if (legacy) return JSON.parse(legacy);
+  }
+  return fallback;
+} catch { return fallback; } };
 const save = (k,v) => localStorage.setItem(`${STORAGE}:${k}`, JSON.stringify(v));
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 
@@ -53,7 +61,7 @@ function App(){
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.1.1 · universal</div>
+        <div className="side-foot">v6.1.2 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
