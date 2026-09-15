@@ -4,7 +4,7 @@ import { SUBJECTS } from './content.js';
 import './styles.css';
 
 const STORAGE = 'nexo:v4';
-const BOX_INTERVALS = [1,2,4,8,16];
+const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const load = (k, fallback) => { try { const v = localStorage.getItem(`${STORAGE}:${k}`); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
 const save = (k,v) => localStorage.setItem(`${STORAGE}:${k}`, JSON.stringify(v));
@@ -22,10 +22,12 @@ function App(){
   const [answers,setAnswers] = useState({});
   const [srs,setSrs] = useState(load('srs',{}));
   const [openTerms,setOpenTerms] = useState({});
+  const [sidebarCollapsed,setSidebarCollapsed] = useState(load('sidebarCollapsed',false));
 
   useEffect(()=>save('uiMode',uiMode),[uiMode]);
   useEffect(()=>save('theme',theme),[theme]);
   useEffect(()=>save('srs',srs),[srs]);
+  useEffect(()=>save('sidebarCollapsed',sidebarCollapsed),[sidebarCollapsed]);
   if(!session) return <Auth mode={authMode} setMode={setAuthMode} onLogin={u=>setSession(u)}/>;
 
   const subject = SUBJECTS.find(s=>s.id===page.subjectId) || null;
@@ -40,16 +42,17 @@ function App(){
     setSrs(prev=>{const next=structuredClone(prev);next[subjectId] ??= {flashcards:{},keywords:{}};next[subjectId].flashcards ??= {};next[subjectId].flashcards[id]=nextReviewState(next[subjectId].flashcards[id],grade,SUBJECTS.find(s=>s.id===subjectId)?.flashcards.find(f=>f.id===id));return next;});
   }
 
-  return <div className={`app theme-${theme} mode-${uiMode}`}>
+  return <div className={`app theme-${theme} mode-${uiMode} ${sidebarCollapsed?'sidebar-collapsed':''}`}>
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand" onClick={goHome}><div className="brand-mark">N</div><div><div className="brand-name">NEXO</div><div className="brand-sub">estudo por conexões</div></div></div>
+        <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
+        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}>{sidebarCollapsed?'→':'←'}</button>
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v4.3 · universal</div>
+        <div className="side-foot">v4.4 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -96,7 +99,6 @@ function Home({subjects,onOpen,srs}){
       <OverviewMetric value={subjects.length} label="disciplinas" />
       <OverviewMetric value={totals.topics} label="módulos" />
       <OverviewMetric value={totals.questions} label="questões" />
-      <div className="metric-overview-due"><span>REVISÃO HOJE</span><strong>{due}</strong><small>{due ? 'itens disponíveis agora' : 'sem itens vencidos'}</small></div>
     </section>
     <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{subjects.length} {subjects.length===1?'disciplina':'disciplinas'}</span></section>
     <div className={`subjects-grid count-${subjects.length} ${subjects.length%2?'odd':''}`}>
@@ -150,7 +152,7 @@ function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQue
     <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
     {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
     {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
-    {tab==='review' && <Review subject={subject} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
+    {tab==='review' && <Review subject={subject} srs={srs} rateFlashcard={rate} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
   </div>
 }
 
@@ -169,8 +171,9 @@ function Learn({subject,topicIdx,setTopicIdx}){
     });
   },[topicIdx]);
   const miniQuiz=(topic.quiz||[]).slice(0,3);
-  return <div className="learn-layout">
-    <aside className="module-index"><div className="module-index-title">Módulos</div>{subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}</aside>
+  const [modulesCollapsed,setModulesCollapsed]=useState(false);
+  return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
+    <aside className="module-index"><div className="module-index-head"><div className="module-index-title">Módulos</div><button className="module-collapse-btn" onClick={()=>setModulesCollapsed(v=>!v)}>{modulesCollapsed?'Expandir':'Recolher'}</button></div>{subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}</aside>
     <div className="study-pane">
       <div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>Aprender</span></div>
       <h2>{topic.title}</h2><p className="topic-sub">{topic.sub}</p>
@@ -180,10 +183,22 @@ function Learn({subject,topicIdx,setTopicIdx}){
     </div>
   </div>
 }
+function stableOptionOrder(q){
+  const items=q.options.map((text,index)=>({text,index}));
+  let seed=[...q.q].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),2166136261);
+  for(let i=items.length-1;i>0;i--){ seed=(seed*1664525+1013904223)>>>0; const j=seed%(i+1); [items[i],items[j]]=[items[j],items[i]]; }
+  return {options:items.map(x=>x.text),originalIndex:items.map(x=>x.index),correct:items.findIndex(x=>x.index===q.correct),feedbackOrder:items.map(x=>x.index)};
+}
+function getOptionFeedback(q, originalIndex, feedback){
+  if(feedback && feedback[originalIndex]) return feedback[originalIndex];
+  const selected=q.options[originalIndex]; const correct=q.options[q.correct];
+  if(originalIndex===q.correct) return q.explain;
+  return `Você escolheu “${selected}”. Essa opção não explica o mecanismo pedido. A questão está apontando para “${correct}”: ${q.explain}`;
+}
 function ModuleQuestion({q,answer,onAnswer}){
   if(q.type==='open') return <article className="module-question open-module-question"><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4><textarea value={answer?.value||''} onChange={e=>onAnswer({value:e.target.value,show:false})} placeholder="Responda com suas palavras..."/><button className="module-answer-link" onClick={()=>onAnswer({value:answer?.value||'',show:!answer?.show})}>{answer?.show?'Ocultar resposta-modelo':'Ver resposta-modelo'}</button>{answer?.show&&<div className="module-model"><strong>Uma boa resposta</strong><p>{q.model}</p></div>}</article>;
-  const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=OPTION_FEEDBACK[q.q]||[];
-  return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO {String.fromCharCode(65+(q.correct||0))}</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===q.correct?'mini-status good':'mini-status bad'}>{chosen===q.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{q.options.map((o,i)=><button key={i} disabled={revealed} className={`mini-option ${revealed&&i===q.correct?'correct':''} ${revealed&&chosen===i&&i!==q.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>)}</div>{revealed&&<div className="module-feedback"><strong>{chosen===q.correct?'Por quê?':'O ponto a corrigir'}</strong><p>{feedback[chosen]||q.explain}</p>{chosen!==q.correct&&<><strong>Resposta correta</strong><p>{feedback[q.correct]||q.explain}</p></>}</div>}</article>
+  const view=stableOptionOrder(q); const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=OPTION_FEEDBACK[q.q]||[];
+  return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===view.correct?'mini-status good':'mini-status bad'}>{chosen===view.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{view.options.map((o,i)=>{const original=view.originalIndex[i];return <button key={i} disabled={revealed} className={`mini-option ${revealed&&i===view.correct?'correct':''} ${revealed&&chosen===i&&i!==view.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>})}</div>{revealed&&<div className="module-feedback"><strong>{chosen===view.correct?'Por quê?':'O ponto a corrigir'}</strong><p>{getOptionFeedback(q,view.originalIndex[chosen],feedback)}</p>{chosen!==view.correct&&<><strong>Resposta correta</strong><p>{getOptionFeedback(q,q.correct,feedback)}</p></>}</div>}</article>
 }
 
 function Practice({subject,idx,setIdx,answers,setAnswers}){
@@ -301,9 +316,11 @@ const OPTION_FEEDBACK={
   ]
 };
 function MCQuestion({q,answered,onAnswer}){
+  const view=stableOptionOrder(q);
   const feedback=OPTION_FEEDBACK[q.q] || [];
-  return <div className="options"><div className="options-grid">{q.options.map((o,i)=>{const selected=answered===i; const revealed=answered!==undefined; const cls=`option ${revealed && i===q.correct?'correct':''} ${revealed && selected && i!==q.correct?'wrong':''} ${selected?'selected':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===q.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==q.correct&&<b className="option-result">×</b>}</button>})}</div>
-    {answered!==undefined && <div className={`feedback ${answered===q.correct?'is-correct':'is-wrong'}`}><strong>{answered===q.correct?'Correto.':'Essa alternativa não é a melhor explicação.'}</strong><span>{feedback[answered] || q.explain}</span>{answered!==q.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{feedback[q.correct] || q.explain}</span></div>}</div>}
+  const selectedOriginal = answered===undefined ? undefined : view.originalIndex[answered];
+  return <div className="options"><div className="options-grid">{view.options.map((o,i)=>{const selected=i===answered; const revealed=answered!==undefined; const cls=`option ${revealed&&i===view.correct?'correct':''} ${revealed&&selected&&i!==view.correct?'wrong':''} ${selected?'selected':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===view.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==view.correct&&<b className="option-result">×</b>}</button>})}</div>
+    {answered!==undefined && <div className={`feedback ${answered===view.correct?'is-correct':'is-wrong'}`}><strong>{answered===view.correct?'Correto.':'Vamos revisar esta escolha.'}</strong><span>{getOptionFeedback(q,selectedOriginal,feedback)}</span>{answered!==view.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{getOptionFeedback(q,q.correct,feedback)}</span></div>}</div>}
   </div>
 }
 
@@ -315,11 +332,11 @@ function reviewRank(state,card){
   const ease=state?.ease??2.5;
   const diff={facil:1,medio:2,dificil:3}[card?.diff]||2;
   const dueToday=!state?.due || state.due<=today();
-  if(!state) return {label:'nova',priority:5,score:120+diff*5};
-  if(dueToday && (lapses>=2 || box===0)) return {label:'prioridade alta',priority:5,score:112+lapses*8+diff*5};
-  if(dueToday && box<=2) return {label:'prioridade',priority:4,score:82+(3-box)*6+diff*4};
-  if(!dueToday && box>=4 && ease>=2.7) return {label:'descanso',priority:1,score:12};
-  return {label:'consolidação',priority:3,score:48+(4-box)*7+diff*3};
+  if(!state) return {label:'nova',priority:5,score:135+diff*8};
+  if(dueToday && (lapses>=2 || box===0)) return {label:'prioridade alta',priority:5,score:128+lapses*10+diff*6};
+  if(dueToday && box<=2) return {label:'prioridade',priority:4,score:92+(3-box)*8+diff*5};
+  if(!dueToday && box>=4 && ease>=2.7) return {label:'descanso',priority:1,score:10};
+  return {label:'consolidação',priority:3,score:52+(4-box)*8+diff*4};
 }
 function nextReviewState(prev,grade,card){
   const cur=prev||{box:0,due:null,reviews:0,streak:0,lapses:0,ease:2.5};
