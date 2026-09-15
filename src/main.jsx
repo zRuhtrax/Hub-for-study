@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v6';
+const STORAGE = 'nexo:v6.1.1';
 const LEGACY_STORAGE = 'nexo:v4';
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -53,7 +53,7 @@ function App(){
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v5 · universal</div>
+        <div className="side-foot">v6.1.1 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
