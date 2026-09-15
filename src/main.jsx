@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v6.1.3';
+const STORAGE = 'nexo:v6.1.4';
 const LEGACY_STORAGES = ['nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -44,6 +44,7 @@ function App(){
   const openDisciplines = () => { setPage({name:'disciplines',subjectId:null}); };
   const openSubject = (id) => { setPage({name:'subject',subjectId:id}); setSubjectTab('learn'); setTopicIdx(0); setQuestionIdx(0); setAnswers({}); };
   const openSettings = () => setPage({name:'settings',subjectId:null});
+  const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
   const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
   const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
 
@@ -59,6 +60,7 @@ function App(){
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
+          <NavButton active={page.name==='flashcards'} icon="▣" label="Flashcards" onClick={openFlashcards}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
         <div className="side-foot">v6.1.3 · universal</div>
@@ -74,10 +76,11 @@ function App(){
         <div className="viewport">
           {page.name==='home' && <Home subjects={SUBJECTS} onOpen={openSubject} srs={srs}/>} 
           {page.name==='disciplines' && <Disciplines subjects={SUBJECTS} onOpen={openSubject}/>} 
+          {page.name==='flashcards' && <FlashcardsHub subjects={SUBJECTS} srs={srs} rateFlashcard={rateFlashcard}/>}
           {page.name==='settings' && <Settings uiMode={uiMode} setUiMode={setUiMode} theme={theme} setTheme={setTheme}/>} 
           {page.name==='subject' && subject && <SubjectView subject={subject} tab={subjectTab} setTab={setSubjectTab} topicIdx={topicIdx} setTopicIdx={setTopicIdx} questionIdx={questionIdx} setQuestionIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
         </div>
-        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onSettings={openSettings}/>
+        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onSettings={openSettings}/>
       </main>
     </div>
   </div>
@@ -89,7 +92,7 @@ function Auth({mode,setMode,onLogin}){
   const submit=async e=>{e.preventDefault();setError('');if(!username.trim()||!password){setError('Preencha usuário e senha.');return}const clean=username.trim().toLowerCase();if(!/^[a-z0-9_.-]{3,24}$/.test(clean)){setError('O usuário precisa ter 3–24 caracteres e usar letras, números, ponto, hífen ou _.');return}setBusy(true);try{const users=load('users',{});const pass=await hashPassword(password);if(mode==='register'){if(!name.trim()){setError('Informe seu nome.');return}if(users[clean]){setError('Esse usuário já existe.');return}if(password!==confirm){setError('As senhas não coincidem.');return}users[clean]={name:name.trim(),username:clean,passwordHash:pass,createdAt:Date.now()};save('users',users);}else{if(!users[clean]||users[clean].passwordHash!==pass){setError('Usuário ou senha inválidos.');return}}const user=users[clean]||{};save('session',{name:user.name||clean,username:clean});onLogin({name:user.name||clean,username:clean});}finally{setBusy(false)}};
   return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">N</span><div><strong>NEXO</strong><small>estudo por conexões</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
 }
-function MobileNav({page,onHome,onDisciplines,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><span>⌂</span>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><span>◫</span>Disciplinas</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><span>⚙</span>Config.</button></nav>}
+function MobileNav({page,onHome,onDisciplines,onFlashcards,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><span>⌂</span>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><span>◫</span>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><span>▣</span>Cards</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><span>⚙</span>Config.</button></nav>}
 
 function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
 
@@ -403,6 +406,28 @@ function nextReviewState(prev,grade,card){
   }
   return n;
 }
+function FlashcardsHub({subjects,srs,rateFlashcard}){
+  const [query,setQuery]=useState('');
+  const [subjectFilter,setSubjectFilter]=useState('all');
+  const [focus,setFocus]=useState(null);
+  const [expanded,setExpanded]=useState(false);
+  const filtered=useMemo(()=>{
+    const pool=subjects.flatMap(subject=>subject.flashcards.map(card=>({subject,card}))).filter(({subject,card})=>{
+      const okSubject=subjectFilter==='all'||subject.id===subjectFilter;
+      const q=query.trim().toLowerCase();
+      return okSubject && (!q||`${subject.name} ${card.front} ${card.back}`.toLowerCase().includes(q));
+    });
+    return pool.sort((a,b)=>reviewRank(srs?.[a.subject.id]?.flashcards?.[a.card.id],a.card).score < reviewRank(srs?.[b.subject.id]?.flashcards?.[b.card.id],b.card).score ? 1 : -1);
+  },[subjects,srs,query,subjectFilter]);
+  const visible=expanded?filtered:filtered.slice(0,8);
+  return <div className="page flashcards-hub-page">
+    <div className="page-head-row"><div><span className="eyebrow">MEMÓRIA ATIVA</span><h1 className="page-h1">Flashcards</h1><p className="page-lead">Uma coletânea única para revisar por disciplina ou trabalhar a fila geral de recuperação.</p></div><div className="hub-count"><b>{filtered.length}</b><span>cards encontrados</span></div></div>
+    <div className="flash-hub-controls"><label>Pesquisar<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Termo, pergunta ou disciplina..." /></label><label>Disciplina<select value={subjectFilter} onChange={e=>setSubjectFilter(e.target.value)}><option value="all">Todas</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
+    <section className="flash-hub-section"><div className="flash-hub-list">{visible.map(({subject,card})=>{const state=srs?.[subject.id]?.flashcards?.[card.id];const rank=reviewRank(state,card);return <article key={`${subject.id}:${card.id}`} className="flash-hub-row"><div><span className="tile-tag">{subject.name}</span><strong>{card.front}</strong><small>{rank.label} · caixa {(state?.box??0)+1}/5</small></div><button className="secondary-btn" onClick={()=>setFocus({subject,card})}>Abrir</button></article>})}{!filtered.length&&<div className="empty-state"><strong>Nenhum flashcard encontrado.</strong><span>Altere a pesquisa ou o filtro.</span></div>}</div>{filtered.length>visible.length&&<button className="review-more" onClick={()=>setExpanded(true)}>Mostrar mais {filtered.length-visible.length}</button>}</section>
+    {focus&&<FlashModal card={focus.card} index={Math.max(0,visible.findIndex(x=>x.card.id===focus.card.id))} total={filtered.length} state={srs?.[focus.subject.id]?.flashcards?.[focus.card.id]} rank={reviewRank(srs?.[focus.subject.id]?.flashcards?.[focus.card.id],focus.card)} onClose={()=>setFocus(null)} onNext={()=>{}} onPrev={()=>{}} onRate={(grade)=>rateFlashcard(focus.subject.id,focus.card.id,grade)}/>} 
+  </div>
+}
+
 function Review({subject,srs,rateFlashcard,openTerms,setOpenTerms}){
   const cards=subject.flashcards; const keywords=subject.keywords;
   const [focusId,setFocusId]=useState(null); const [cardsExpanded,setCardsExpanded]=useState(false); const [termFocus,setTermFocus]=useState(null);
