@@ -39,11 +39,26 @@ function App(){
     setSrs(prev=>{
       const next = structuredClone(prev);
       next[subjectId] ??= {flashcards:{},keywords:{}};
-      next[subjectId][kind][id] ??= {box:0,due:null,reviews:0};
+      next[subjectId][kind] ??= {};
+      next[subjectId][kind][id] ??= {box:0,due:null,reviews:0,streak:0,lapses:0,ease:2.5,lastRating:null};
       const it = next[subjectId][kind][id];
-      if(remembered) it.box = clamp(it.box+1,0,4); else it.box = 0;
-      it.due = new Date(Date.now()+BOX_INTERVALS[it.box]*86400000).toISOString().slice(0,10);
-      it.reviews += 1;
+      it.reviews = (it.reviews || 0) + 1;
+      it.ease = it.ease || 2.5;
+      if(remembered){
+        it.box = clamp((it.box ?? 0) + 1,0,4);
+        it.streak = (it.streak || 0) + 1;
+        it.ease = clamp(it.ease + 0.08,1.5,3.2);
+        it.lastRating = 'remembered';
+      } else {
+        it.box = 0;
+        it.streak = 0;
+        it.lapses = (it.lapses || 0) + 1;
+        it.ease = clamp(it.ease - 0.22,1.5,3.2);
+        it.lastRating = 'forgot';
+      }
+      const base = BOX_INTERVALS[it.box] || 1;
+      const days = remembered ? Math.max(1,Math.round(base * (it.ease/2.5))) : 1;
+      it.due = new Date(Date.now()+days*86400000).toISOString().slice(0,10);
       return next;
     });
   }
@@ -56,7 +71,7 @@ function App(){
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v4.1 · universal</div>
+        <div className="side-foot">v4.2 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -93,7 +108,11 @@ function Home({subjects,onOpen,srs}){
   return <div className="page home-page">
     <section className="hero-grid">
       <div><div className="eyebrow">NEXO</div><h1>Entender primeiro.<br/><em>Conectar depois.</em></h1><p>Um espaço para estudar por mecanismos, relações e recuperação ativa, sem transformar aprendizado em uma coleção de números.</p></div>
-      <div className={`overview-panel ${due ? 'has-due' : 'is-clear'}`}><span className="panel-kicker">HOJE</span><div className="overview-main"><strong>{due || '—'}</strong><span>{due===1?'item para revisar':due>1?'itens para revisar':'nenhuma pendência'}</span></div><span className="overview-note">Recupere primeiro o que está mais próximo de vencer.</span></div>
+    </section>
+    <section className="today-strip">
+      <div className="today-mark"><span>HOJE</span><strong>{due || '—'}</strong></div>
+      <div className="today-copy"><h3>{due===1?'Item para revisar':due>1?'Itens para revisar':'Tudo em dia'}</h3><p>{due?'Comece pelo que já está pronto para recuperação. O restante pode esperar.':'Não há itens vencidos no momento. Continue pelo estudo previsto.'}</p></div>
+      <div className="today-rule" aria-hidden="true"></div>
     </section>
     <section className="section-head"><div><span className="eyebrow">MATÉRIAS</span><h2>Seus estudos</h2></div><span className="section-count">{subjects.length} {subjects.length===1?'matéria':'matérias'}</span></section>
     <div className={`subjects-grid count-${subjects.length} ${subjects.length%2?'odd':''}`}>
@@ -173,50 +192,159 @@ function Practice({subject,idx,setIdx,answers,setAnswers}){
     <div className="question-nav"><button disabled={idx===0} onClick={()=>setIdx(i=>i-1)}>←</button><button disabled={idx===qs.length-1} onClick={()=>setIdx(i=>i+1)}>Próxima →</button></div>
   </div>
 }
-function MCQuestion({q,answered,onAnswer}){return <div className="options">{q.options.map((o,i)=><button key={i} className={`option ${answered!==undefined && i===q.correct?'correct':''} ${answered===i && i!==q.correct?'wrong':''}`} disabled={answered!==undefined} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em></button>)}{answered!==undefined && <div className="feedback"><strong>{answered===q.correct?'Correto.':'Revise este raciocínio.'}</strong><span>{q.explain}</span></div>}</div>}
+const OPTION_FEEDBACK={
+  "Uma estação registra 34 °C e chuva intensa em uma tarde. Qual conclusão é mais defensável?": [
+    "Essa observação descreve um estado momentâneo da atmosfera. Uma única tarde não define o clima de uma cidade.",
+    "Correto. Tempo descreve as condições atmosféricas em uma escala curta; clima exige séries mais longas e padrões estatísticos.",
+    "Uma chuva intensa isolada não prova uma mudança climática. Para atribuição climática, é preciso analisar probabilidades e contexto físico e estatístico.",
+    "Temperatura é uma variável usada tanto na descrição do tempo quanto do clima. O que muda é a escala e a forma de análise."
+  ],
+  "Uma cidade teve três anos seguidos acima da média histórica. Qual análise seria mais adequada antes de afirmar uma mudança permanente?": [
+    "Um único ano recente não fornece contexto suficiente para avaliar uma tendência. Comparar apenas com o último ano pode esconder a variabilidade.",
+    "Correto. É necessário olhar séries mais longas, variabilidade, tendências e outros indicadores antes de concluir que houve uma mudança permanente.",
+    "Anos extremos continuam sendo dados válidos. O ponto é contextualizá-los estatisticamente, não descartá-los.",
+    "A maior temperatura registrada é apenas um extremo. Ela não substitui a análise de médias, variabilidade e séries temporais."
+  ],
+  "Duas cidades têm a mesma temperatura média anual, mas uma possui verões e invernos muito mais contrastantes. Qual medida ajuda diretamente a perceber essa diferença?": [
+    "Correto. A amplitude térmica mostra a diferença entre valores de temperatura e pode revelar contrastes que uma média anual esconde.",
+    "Pressão atmosférica pode variar com tempo e altitude, mas não mede diretamente o contraste sazonal de temperatura descrito.",
+    "Latitude influencia a distribuição de energia, mas duas cidades podem ter latitudes semelhantes ou respostas térmicas diferentes. Não é a medida pedida.",
+    "Precipitação anual isolada informa quantidade de chuva, não o contraste entre temperaturas de verão e inverno."
+  ],
+  "Depois que ar úmido sobe ao encontrar uma serra, ocorre resfriamento e formação de nuvens. Que mecanismo de precipitação está mais diretamente envolvido?": [
+    "A convecção envolve aquecimento e ascensão do ar, mas aqui o gatilho destacado é a barreira do relevo.",
+    "Correto. A chuva orográfica ocorre quando o relevo força a ascensão do ar, favorecendo resfriamento, condensação e precipitação.",
+    "Chuva frontal depende do encontro entre massas de ar com características diferentes. A serra, neste caso, é o mecanismo principal.",
+    "O sistema pode envolver baixa pressão, mas a descrição da subida forçada por uma serra identifica diretamente o mecanismo orográfico."
+  ],
+  "Em qual camada ocorrem a maior parte das nuvens, chuvas e outros fenômenos meteorológicos próximos à superfície?": [
+    "A estratosfera fica acima da troposfera e concentra a maior parte do ozônio, não a maior parte do tempo meteorológico cotidiano.",
+    "Correto. A troposfera é a camada inferior e concentra a maior parte do vapor d’água e da dinâmica associada ao tempo meteorológico.",
+    "A mesosfera está muito acima da região onde se concentra a maior parte dos fenômenos meteorológicos próximos à superfície.",
+    "A exosfera é a camada mais externa e extremamente rarefeita, muito distante das condições do tempo meteorológico cotidiano."
+  ],
+  "Qual sequência apresenta as camadas principais da atmosfera a partir da superfície?": [
+    "Correto. A ordem é troposfera, estratosfera, mesosfera, termosfera e exosfera.",
+    "A estratosfera vem depois da troposfera, portanto a sequência começa fora de ordem.",
+    "Mesosfera e estratosfera estão invertidas e a ordem final também não corresponde à organização vertical convencional.",
+    "Essa sequência está invertida: a exosfera é a mais externa, não a camada mais próxima da superfície."
+  ],
+  "Por que conhecer a estrutura vertical da atmosfera ajuda na climatologia?": [
+    "As camadas não têm comportamento idêntico. Precisamente por isso, tratá-las como uniformes levaria a conclusões erradas.",
+    "Correto. Temperatura, composição e processos variam com a altitude, então separar as camadas ajuda a relacionar cada processo ao contexto correto.",
+    "A exosfera não é a única camada relevante. Processos de clima e tempo envolvem principalmente a atmosfera inferior e suas interações.",
+    "A altitude pode alterar temperatura, pressão, composição e dinâmica. Portanto, dizer que ela não altera processos está incorreto."
+  ],
+  "Por que a proximidade do oceano tende a reduzir a amplitude térmica?": [
+    "A água não troca energia de forma simplesmente rápida; sua grande capacidade térmica faz com que aqueça e esfrie mais lentamente.",
+    "Correto. O oceano armazena e libera energia lentamente, amortecendo variações de temperatura próximas a ele.",
+    "O litoral não recebe necessariamente menos radiação solar. A explicação principal está na resposta térmica da água.",
+    "O oceano não impede a circulação. Ele influencia temperatura, umidade e circulação, mas o ponto central aqui é sua capacidade térmica."
+  ],
+  "Um deserto costeiro pode ser muito seco mesmo estando próximo do oceano. Qual combinação ajuda a explicar esse caso?": [
+    "Correto. Correntes frias e condições atmosféricas estáveis podem reduzir convecção e favorecer aridez, mesmo perto de uma grande fonte de água.",
+    "A maritimidade pode elevar a umidade disponível, mas não elimina circulação e estabilidade atmosférica; estar no litoral não garante chuva.",
+    "Latitude participa do balanço energético, mas dizer que ela não tem qualquer relação é incorreto e também não explica sozinha o caso.",
+    "Albedo altera a reflexão de radiação, mas não produz chuva diretamente. É outro mecanismo físico."
+  ],
+  "Em um sistema de baixa pressão, qual processo favorece a formação de nuvens e chuva?": [
+    "Subsidência é movimento descendente e tende a dificultar nuvens profundas, não favorecê-las.",
+    "Correto. Convergência próxima à superfície favorece ascensão; o ar que sobe esfria e pode atingir saturação, formando nuvens e chuva.",
+    "O vapor d’água é justamente um componente importante para condensação e precipitação. Sua ausência não favorece chuva.",
+    "A descida do ar tende a estabilizar a atmosfera e dificultar convecção profunda, portanto não é a cadeia mais adequada."
+  ],
+  "O que caracteriza uma frente fria?": [
+    "Essa descrição corresponde a uma frente quente, não a uma frente fria.",
+    "Correto. Na frente fria, uma massa de ar mais frio avança e força o ar quente a subir, podendo gerar nuvens e precipitação.",
+    "Alta pressão parada sobre o oceano não define uma frente fria.",
+    "Um ciclone tropical pode interagir com frentes em certos contextos, mas atravessar montanhas não é a definição de frente fria."
+  ],
+  "O que caracteriza o El Niño no Pacífico equatorial?": [
+    "Esse quadro corresponde ao resfriamento associado à La Niña, não ao El Niño.",
+    "Correto. El Niño envolve aquecimento anômalo do Pacífico equatorial central e leste, acompanhado de mudanças atmosféricas.",
+    "O ENSO não aquece todos os oceanos de forma uniforme. O sinal característico está concentrado no Pacífico equatorial.",
+    "El Niño pertence ao sistema do Pacífico; não é definido por uma alteração isolada no Atlântico."
+  ],
+  "Qual relação entre El Niño e La Niña está correta?": [
+    "Eles não são o mesmo estado: representam fases diferentes do ENSO.",
+    "Correto. El Niño e La Niña são fases quente e fria, respectivamente, de um sistema acoplado oceano-atmosfera do Pacífico.",
+    "As duas fases podem ocorrer em diferentes épocas do ano; a distinção não é definida por uma estação fixa.",
+    "Ambas fazem parte do ENSO no Pacífico, não uma em cada oceano."
+  ],
+  "Qual cadeia representa melhor uma parte importante da intensificação de um ciclone tropical?": [
+    "Correto. Oceano quente favorece evaporação; a condensação libera calor latente e ajuda a sustentar convecção e circulação.",
+    "Água fria tende a reduzir evaporação e não explica fortalecimento automático de um ciclone tropical.",
+    "Solo seco não fornece a fonte oceânica de energia que sustenta a convecção de um ciclone tropical.",
+    "Subsidência associada à alta pressão tende a inibir convecção, portanto não descreve a intensificação proposta."
+  ],
+  "Por que um ciclone tropical tende a não se organizar exatamente sobre o Equador?": [
+    "Há oceanos atravessados pelo Equador. A existência ou ausência de oceano não explica o limite de organização ciclônica.",
+    "Correto. O efeito de Coriolis é muito fraco perto do Equador para fornecer a organização rotacional necessária ao sistema.",
+    "O ar pode subir no Equador; a questão é a organização da circulação em rotação, não a impossibilidade de movimento ascendente.",
+    "As águas equatoriais podem ser quentes. O problema não é a temperatura do oceano ser sempre baixa, mas o ambiente dinâmico."
+  ],
+  "Qual cadeia explica melhor o aquecimento global antropogênico?": [
+    "Correto. Atividades humanas elevam gases de efeito estufa; isso altera o balanço de energia e contribui para o aquecimento do sistema climático.",
+    "Mais chuva não é a cadeia física fundamental apresentada, e reduzir CO₂ não produz aquecimento direto desse modo.",
+    "Vento não é a causa central do aquecimento global antropogênico, e menos vapor não descreve o mecanismo de efeito estufa.",
+    "Menor radiação recebida não aumenta retenção de energia. A mudança relevante envolve a interação da radiação infravermelha com gases de efeito estufa."
+  ],
+  "Por que um evento extremo isolado não deve ser atribuído automaticamente à mudança climática?": [
+    "O clima influencia extremos. O ponto é que um evento isolado não permite atribuir sua ocorrência automaticamente a uma única causa.",
+    "Correto. Cada extremo resulta de contexto local e circulação, enquanto a mudança climática pode alterar probabilidades e intensidades; isso exige atribuição adequada.",
+    "Eventos extremos podem ser observados e estudados. A dificuldade está em separar variabilidade, causas e alterações de probabilidade.",
+    "Temperatura média é importante, mas extremos dependem também de circulação, umidade, solo, oceano e outros fatores."
+  ]
+};
+function MCQuestion({q,answered,onAnswer}){
+  const feedback=OPTION_FEEDBACK[q.q] || [];
+  return <div className="options">{q.options.map((o,i)=>{const selected=answered===i; const revealed=answered!==undefined; const cls=`option ${revealed && i===q.correct?'correct':''} ${selected && i!==q.correct?'wrong':''} ${selected?'selected':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em></button>})}
+    {answered!==undefined && <div className={`feedback ${answered===q.correct?'is-correct':'is-wrong'}`}><strong>{answered===q.correct?'Correto.':'Essa alternativa não é a melhor explicação.'}</strong><span>{feedback[answered] || q.explain}</span>{answered!==q.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{feedback[q.correct] || q.explain}</span></div>}</div>}
+  </div>
+}
 function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.value||'');const [show,setShow]=useState(false); return <div className="open-wrap"><textarea value={v} onChange={e=>{setV(e.target.value);onAnswer(e.target.value)}} placeholder="Escreva com suas próprias palavras..."/><button className="secondary-btn" onClick={()=>setShow(!show)}>{show?'Ocultar resposta-modelo':'Comparar com resposta-modelo'}</button>{show&&<div className="model-answer"><strong>Resposta-modelo</strong><p>{q.model}</p><div className="term-list">{q.terms?.map(t=><span key={t}>{t}</span>)}</div></div>}</div>}
 
+function reviewRank(state,card){
+  const box=state?.box??0;
+  const lapses=state?.lapses??0;
+  const diff={facil:1,medio:2,dificil:3}[card?.diff]||2;
+  if(!state) return {label:'nova',priority:5,score:100};
+  const dueToday=!state.due || state.due<=today();
+  if(!dueToday && box>=4) return {label:'descanso',priority:1,score:10};
+  if(lapses>=2 || box===0) return {label:'prioridade alta',priority:5,score:90+lapses*5+diff};
+  if(box===1) return {label:'prioridade alta',priority:4,score:75+diff};
+  if(box<=3) return {label:'consolidação',priority:3,score:45+(4-box)*5+diff};
+  return {label:'descanso',priority:1,score:10};
+}
 function Review({subject,srs,rate,openTerms,setOpenTerms}){
   const cards=subject.flashcards; const keywords=subject.keywords;
-  const [focusId,setFocusId]=useState(null);
-  const focusIndex=focusId===null ? -1 : cards.findIndex(c=>c.id===focusId);
-  const focusCard=focusIndex>=0 ? cards[focusIndex] : null;
-  const closeFocus=()=>setFocusId(null);
-  const stepFocus=(dir)=>{
-    if(!cards.length) return;
-    const next=(focusIndex+dir+cards.length)%cards.length;
-    setFocusId(cards[next].id);
-  };
-  useEffect(()=>{
-    if(focusId===null) return;
-    const onKey=(e)=>{
-      if(e.key==='Escape') closeFocus();
-      if(e.key==='ArrowRight') stepFocus(1);
-      if(e.key==='ArrowLeft') stepFocus(-1);
-    };
-    window.addEventListener('keydown',onKey);
-    return()=>window.removeEventListener('keydown',onKey);
-  },[focusId,focusIndex,cards.length]);
-  return <div className="review-pane"><div className="review-hero"><div><span className="eyebrow">REVISAR</span><h2>Recuperar, não reler.</h2><p>Use o esforço de lembrar antes de olhar a resposta.</p></div></div>
-    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">FLASHCARDS</span><h3>Memória ativa</h3></div><span>{cards.length} itens</span></div><div className="flash-grid">{cards.map(c=><Flash key={c.id} card={c} state={srs?.[subject.id]?.flashcards?.[c.id]} onOpen={()=>setFocusId(c.id)}/>)}</div></section>
-    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">CONCEITOS</span><h3>Termos essenciais</h3></div><span>{keywords.length} itens</span></div><div className="keyword-list">{keywords.map(k=>{const key=subject.id+':'+k.id; const open=!!openTerms[key]; return <div className={`keyword ${open?'open':''}`} key={k.id}><button onClick={()=>setOpenTerms({...openTerms,[key]:!open})}><span>{k.term}</span><span>＋</span></button><div>{k.def}<div className="keyword-rate"><button onClick={()=>rate(subject.id,'keywords',k.id,false)}>Não lembrei</button><button onClick={()=>rate(subject.id,'keywords',k.id,true)}>Lembrei</button></div></div></div>})}</div></section>
-    {focusCard && <FlashModal card={focusCard} index={focusIndex} total={cards.length} state={srs?.[subject.id]?.flashcards?.[focusCard.id]} onClose={closeFocus} onNext={()=>stepFocus(1)} onPrev={()=>stepFocus(-1)} onRate={remembered=>rate(subject.id,'flashcards',focusCard.id,remembered)} />}
+  const [focusId,setFocusId]=useState(null); const [cardsExpanded,setCardsExpanded]=useState(false); const [termFocus,setTermFocus]=useState(null);
+  const rankedCards=useMemo(()=>[...cards].sort((a,b)=>{const ra=reviewRank(srs?.[subject.id]?.flashcards?.[a.id],a),rb=reviewRank(srs?.[subject.id]?.flashcards?.[b.id],b);return rb.score-ra.score}),[cards,srs,subject.id]);
+  const visibleCards=cardsExpanded?rankedCards:rankedCards.slice(0,Math.min(6,rankedCards.length));
+  const focusIndex=focusId===null ? -1 : rankedCards.findIndex(c=>c.id===focusId); const focusCard=focusIndex>=0?rankedCards[focusIndex]:null;
+  const closeFocus=()=>setFocusId(null); const stepFocus=(dir)=>{if(!rankedCards.length)return;const next=(focusIndex+dir+rankedCards.length)%rankedCards.length;setFocusId(rankedCards[next].id)};
+  useEffect(()=>{if(focusId===null)return;const onKey=e=>{if(e.key==='Escape')closeFocus();if(e.key==='ArrowRight')stepFocus(1);if(e.key==='ArrowLeft')stepFocus(-1)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[focusId,focusIndex,rankedCards.length]);
+  const dueCards=rankedCards.filter(c=>{const st=srs?.[subject.id]?.flashcards?.[c.id];return !st?.due||st.due<=today()}).length;
+  const high=rankedCards.filter(c=>reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c).priority>=4).length;
+  const resting=rankedCards.filter(c=>reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c).label==='descanso').length;
+  return <div className="review-pane">
+    <div className="review-hero"><div><span className="eyebrow">REVISAR</span><h2>Recuperar, não reler.</h2><p>A ordem se adapta ao seu desempenho. O que você domina descansa; o que falha volta para perto.</p></div><div className="review-stats"><span><b>{dueCards}</b> hoje</span><span><b>{high}</b> prioridade</span><span><b>{resting}</b> em descanso</span></div></div>
+    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">FLASHCARDS</span><h3>Memória ativa</h3><p>Mostrando primeiro os itens que mais precisam de recuperação.</p></div><button className="collapse-btn" onClick={()=>setCardsExpanded(v=>!v)}>{cardsExpanded?'Ocultar lista':'Ver todos os cards'} · {cards.length}</button></div>
+      <div className={`flash-grid ${cardsExpanded?'expanded':''}`}>{visibleCards.map(c=>{const rank=reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c);return <Flash key={c.id} card={c} state={srs?.[subject.id]?.flashcards?.[c.id]} rank={rank} onOpen={()=>setFocusId(c.id)}/>})}</div>
+      {!cardsExpanded && cards.length>visibleCards.length && <button className="review-more" onClick={()=>setCardsExpanded(true)}>+ {cards.length-visibleCards.length} cards</button>}
+    </section>
+    <section className="review-section terms-section"><div className="review-section-head"><div><span className="eyebrow">CONCEITOS</span><h3>Termos essenciais</h3><p>Clique em um termo para abrir a definição em foco.</p></div><span>{keywords.length} itens</span></div><div className="keyword-list">{keywords.map(k=>{const key=subject.id+':'+k.id;const open=!!openTerms[key];return <article className={`keyword ${open?'open':''}`} key={k.id}><button onClick={()=>setTermFocus(k)}><span>{k.term}</span><span>↗</span></button><div className="keyword-def"><p>{k.def}</p></div></article>})}</div></section>
+    {focusCard && <FlashModal card={focusCard} index={focusIndex} total={rankedCards.length} state={srs?.[subject.id]?.flashcards?.[focusCard.id]} rank={reviewRank(srs?.[subject.id]?.flashcards?.[focusCard.id],focusCard)} onClose={closeFocus} onNext={()=>stepFocus(1)} onPrev={()=>stepFocus(-1)} onRate={remembered=>rate(subject.id,'flashcards',focusCard.id,remembered)}/>} 
+    {termFocus && <TermModal term={termFocus} onClose={()=>setTermFocus(null)} />}
   </div>
 }
-function Flash({card,state,onOpen}){return <article className="flash-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5</div><button className="flash-face" onClick={onOpen}><span className="flash-label">TENTE LEMBRAR</span><strong>{card.front}</strong><span className="flash-open">Abrir em foco</span></button></article>}
-function FlashModal({card,index,total,state,onClose,onNext,onPrev,onRate}){
-  const [flip,setFlip]=useState(false);
-  useEffect(()=>setFlip(false),[card.id]);
-  return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
-    <div className="flash-modal-panel">
-      <div className="flash-modal-top"><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div>
-      <div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-actions"><button onClick={()=>onRate(false)}>Não lembrei</button><button onClick={()=>onRate(true)}>Lembrei</button></div>}</div>
-      <div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div>
-    </div>
-  </div>
-}
-
+function Flash({card,state,rank,onOpen}){return <article className={`flash-card priority-${rank?.priority||3}`}><div className="flash-card-head"><span className="flash-tag">CAIXA {(state?.box??0)+1}/5</span><span className="rank-pill">{rank?.label||'nova'}</span></div><button className="flash-face" onClick={onOpen}><span className="flash-label">TENTE LEMBRAR</span><strong>{card.front}</strong><span className="flash-open">Abrir em foco</span></button></article>}
+function FlashModal({card,index,total,state,rank,onClose,onNext,onPrev,onRate}){const [flip,setFlip]=useState(false);useEffect(()=>setFlip(false),[card.id]);return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="flash-modal-panel"><div className="flash-modal-top"><div><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><span className="modal-rank">{rank.label}</span></div><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div><div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5 · {state?.reviews||0} revisões</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-actions"><button className="rate-hard" onClick={()=>onRate(false)}>Não lembrei</button><button className="rate-easy" onClick={()=>onRate(true)}>Lembrei</button></div>}</div><div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div></div></div>}
+function TermModal({term,onClose}){return <div className="term-modal" role="dialog" aria-modal="true" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="term-modal-panel"><div className="flash-modal-top"><span className="flash-modal-count">CONCEITO</span><button className="icon-btn" onClick={onClose}>×</button></div><span className="eyebrow">TERMO ESSENCIAL</span><h3>{term.term}</h3><p>{term.def}</p></div></div>}
 function isDue(sid,kind,id,srs){const x=srs?.[sid]?.[kind]?.[id]; return !x?.due || x.due<=today();}
-function adaptThemeHtml(html){return html.replaceAll('#F8F7F1','var(--diagram-surface)').replaceAll('#374151','var(--diagram-ink)').replaceAll('#5B6472','var(--diagram-muted)').replaceAll('#D7DCE4','var(--diagram-line)').replaceAll('#9AA4B3','var(--diagram-line)').replaceAll('#6B7280','var(--diagram-muted)').replaceAll('#475569','var(--diagram-muted)');}
+function adaptThemeHtml(html){
+  const map={'#F8F7F1':'var(--diagram-surface)','#374151':'var(--diagram-ink)','#5B6472':'var(--diagram-muted)','#D7DCE4':'var(--diagram-line)','#9AA4B3':'var(--diagram-line)','#6B7280':'var(--diagram-muted)','#475569':'var(--diagram-muted)','#3F5F9C':'var(--diagram-blue)','#5E87E8':'var(--diagram-blue)','#EAF0FF':'var(--diagram-blue-soft)','#EEF3FF':'var(--diagram-blue-soft)','#E3F3EB':'var(--diagram-green-soft)','#23835A':'var(--diagram-green)','#245E44':'var(--diagram-green-ink)','#E8F3DE':'var(--diagram-green-soft)','#346D45':'var(--diagram-green-ink)','#F9EED9':'var(--diagram-amber-soft)','#72551B':'var(--diagram-amber-ink)','#B77B19':'var(--diagram-amber)','#F8E1E1':'var(--diagram-red-soft)','#7B3434':'var(--diagram-red-ink)','#EEE9FA':'var(--diagram-purple-soft)','#4B3D74':'var(--diagram-purple-ink)','#CBD2DE':'var(--diagram-line)','#697384':'var(--diagram-muted)','#DDEBF4':'var(--diagram-blue-soft)','#315E78':'var(--diagram-blue-ink)'};
+  return Object.entries(map).reduce((out,[a,b])=>out.replaceAll(a,b),html);
+}
 
 createRoot(document.getElementById('root')).render(<App/>);
