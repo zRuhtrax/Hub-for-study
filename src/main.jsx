@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v4';
+const STORAGE = 'nexo:v5';
+const LEGACY_STORAGE = 'nexo:v4';
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
-const load = (k, fallback) => { try { const v = localStorage.getItem(`${STORAGE}:${k}`); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
+const load = (k, fallback) => { try { const current = localStorage.getItem(`${STORAGE}:${k}`); if (current) return JSON.parse(current); const legacy = localStorage.getItem(`${LEGACY_STORAGE}:${k}`); return legacy ? JSON.parse(legacy) : fallback; } catch { return fallback; } };
 const save = (k,v) => localStorage.setItem(`${STORAGE}:${k}`, JSON.stringify(v));
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 
@@ -46,17 +47,17 @@ function App(){
     <div className="shell">
       <aside className="sidebar">
         <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
-        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}>{sidebarCollapsed?'→':'←'}</button>
+        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v4.4 · universal</div>
+        <div className="side-foot">v5 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
-          <div className="topbar-mobile-brand"><span className="brand-mark sm">N</span><span>NEXO</span></div>
+          <div className="topbar-mobile-brand"><span className="brand-word"><b>N</b><span>EXO</span></span></div>
           <div className="topbar-actions">
             {page.name==='subject' && <button className="ghost-btn" onClick={goHome}>← Início</button>}
             <button className="icon-btn" onClick={openSettings} title="Configurações">⚙</button>
@@ -160,25 +161,39 @@ function Learn({subject,topicIdx,setTopicIdx}){
   const topic=subject.topics[topicIdx];
   const firstRender=useRef(true);
   const [quizAnswers,setQuizAnswers]=useState({});
+  const [modulesCollapsed,setModulesCollapsed]=useState(false);
   useEffect(()=>{setQuizAnswers({});},[topicIdx]);
   useEffect(()=>{
     if(firstRender.current){ firstRender.current=false; return; }
     requestAnimationFrame(()=>{
       const title=document.querySelector('.study-pane h2');
       if(!title) return;
-      const top=title.getBoundingClientRect().top + window.scrollY - (window.innerWidth<=900 ? 104 : 82);
+      const top=title.getBoundingClientRect().top + window.scrollY - (window.innerWidth<=900 ? 92 : 70);
       window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
     });
   },[topicIdx]);
-  const miniQuiz=(topic.quiz||[]).slice(0,3);
-  const [modulesCollapsed,setModulesCollapsed]=useState(false);
+  const miniQuiz=(topic.quiz||[]).slice(0,4);
+  const progress=((topicIdx+1)/subject.topics.length)*100;
   return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
-    <aside className="module-index"><div className="module-index-head"><div className="module-index-title">Módulos</div><button className="module-collapse-btn" onClick={()=>setModulesCollapsed(v=>!v)}>{modulesCollapsed?'Expandir':'Recolher'}</button></div>{subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}</aside>
+    <aside className="module-index" aria-label="Módulos">
+      <div className="module-index-head">
+        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {subject.topics.length}</span></div>
+        <button className="module-collapse-btn icon-only" onClick={()=>setModulesCollapsed(v=>!v)} aria-label={modulesCollapsed?'Mostrar nomes dos módulos':'Ocultar nomes dos módulos'} title={modulesCollapsed?'Expandir módulos':'Recolher módulos'}><span>{modulesCollapsed?'›':'‹'}</span></button>
+      </div>
+      <div className="module-index-progress"><i style={{width:`${progress}%`}}/></div>
+      <div className="module-index-list">
+        {subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
+      </div>
+    </aside>
     <div className="study-pane">
-      <div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>Aprender</span></div>
-      <h2>{topic.title}</h2><p className="topic-sub">{topic.sub}</p>
+      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
+      <div className="study-intro">
+        <span className="study-intro-label">IDEIA-GUIA</span>
+        <h2>{topic.title}</h2>
+        <p className="topic-sub">{topic.sub}</p>
+      </div>
       <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html)}} />
-      {miniQuiz.length>0 && <section className="module-check"><div className="module-check-head"><div><span className="eyebrow">FIXAÇÃO DO MÓDULO</span><h3>Veja se a ideia ficou</h3><p>Questões curtas para testar a compreensão antes de seguir.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
+      {miniQuiz.length>0 && <section className="module-check redesigned-check"><div className="module-check-head"><div><span className="eyebrow">RECUPERAÇÃO ATIVA</span><h3>Antes de seguir</h3><p>Recupere a ideia principal sem voltar ao texto. O objetivo é testar o entendimento, não reconhecer a frase.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
       <div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
     </div>
   </div>
@@ -203,7 +218,7 @@ function ModuleQuestion({q,answer,onAnswer}){
 
 function Practice({subject,idx,setIdx,answers,setAnswers}){
   const qs=subject.questions; const q=qs[idx]; const answered=answers[idx];
-  return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2></div><span>{idx+1} / {qs.length}</span></div>
+  return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2><p>Questões desenhadas para separar reconhecimento de compreensão.</p></div><span>{idx+1} / {qs.length}</span></div>
     <div className="progress-track"><div style={{width:`${((idx+1)/qs.length)*100}%`}}/></div>
     <article className="question-card"><div className="q-kind">{q.challenge?'INTEGRAÇÃO':'FIXAÇÃO'} · {q.type==='open'?'RESPOSTA ABERTA':'MÚLTIPLA ESCOLHA'}</div><h3>{q.q}</h3>
       {q.type==='open' ? <OpenQuestion q={q} answered={answered} onAnswer={(v)=>setAnswers({...answers,[idx]:{value:v,show:answered?.show||false}})} /> : <MCQuestion q={q} answered={answered} onAnswer={(v)=>setAnswers({...answers,[idx]:v})}/>} 
@@ -319,36 +334,58 @@ function MCQuestion({q,answered,onAnswer}){
   const view=stableOptionOrder(q);
   const feedback=OPTION_FEEDBACK[q.q] || [];
   const selectedOriginal = answered===undefined ? undefined : view.originalIndex[answered];
-  return <div className="options"><div className="options-grid">{view.options.map((o,i)=>{const selected=i===answered; const revealed=answered!==undefined; const cls=`option ${revealed&&i===view.correct?'correct':''} ${revealed&&selected&&i!==view.correct?'wrong':''} ${selected?'selected':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===view.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==view.correct&&<b className="option-result">×</b>}</button>})}</div>
+  return <div className="options"><div className="options-grid">{view.options.map((o,i)=>{const selected=i===answered; const revealed=answered!==undefined; const cls=`option ${revealed&&i===view.correct?'correct':''} ${revealed&&selected&&i!==view.correct?'wrong':''} ${selected?'selected':''} ${revealed&&!selected&&i!==view.correct?'muted-option':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===view.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==view.correct&&<b className="option-result">×</b>}</button>})}</div>
     {answered!==undefined && <div className={`feedback ${answered===view.correct?'is-correct':'is-wrong'}`}><strong>{answered===view.correct?'Correto.':'Vamos revisar esta escolha.'}</strong><span>{getOptionFeedback(q,selectedOriginal,feedback)}</span>{answered!==view.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{getOptionFeedback(q,q.correct,feedback)}</span></div>}</div>}
   </div>
 }
 
 function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.value||'');const [show,setShow]=useState(false); return <div className="open-wrap"><textarea value={v} onChange={e=>{setV(e.target.value);onAnswer(e.target.value)}} placeholder="Escreva com suas próprias palavras..."/><button className="secondary-btn" onClick={()=>setShow(!show)}>{show?'Ocultar resposta-modelo':'Comparar com resposta-modelo'}</button>{show&&<div className="model-answer"><strong>Resposta-modelo</strong><p>{q.model}</p><div className="term-list">{q.terms?.map(t=><span key={t}>{t}</span>)}</div></div>}</div>}
 
+function localDateFromToday(days){
+  const d=new Date();
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()+days);
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function daysLate(due){
+  if(!due) return 0;
+  const a=new Date(`${due}T12:00:00`), b=new Date(`${today()}T12:00:00`);
+  return Math.round((b-a)/86400000);
+}
 function reviewRank(state,card){
   const box=state?.box??0;
   const lapses=state?.lapses??0;
-  const ease=state?.ease??2.5;
-  const diff={facil:1,medio:2,dificil:3}[card?.diff]||2;
+  const stability=state?.stability??BOX_INTERVALS[Math.min(box,BOX_INTERVALS.length-1)]??1;
+  const difficulty=state?.difficulty??({facil:0.25,medio:0.5,dificil:0.75}[card?.diff]??0.5);
   const dueToday=!state?.due || state.due<=today();
-  if(!state) return {label:'nova',priority:5,score:135+diff*8};
-  if(dueToday && (lapses>=2 || box===0)) return {label:'prioridade alta',priority:5,score:128+lapses*10+diff*6};
-  if(dueToday && box<=2) return {label:'prioridade',priority:4,score:92+(3-box)*8+diff*5};
-  if(!dueToday && box>=4 && ease>=2.7) return {label:'descanso',priority:1,score:10};
-  return {label:'consolidação',priority:3,score:52+(4-box)*8+diff*4};
+  const overdue=Math.max(0,daysLate(state?.due));
+  if(!state) return {label:'nova',priority:5,score:160+difficulty*20};
+  if(dueToday && (lapses>=2 || box===0)) return {label:'prioridade alta',priority:5,score:145+overdue*4+lapses*12+difficulty*8};
+  if(dueToday) return {label:'prioridade',priority:4,score:108+overdue*5+(4-box)*9+difficulty*7};
+  if(!dueToday && box>=4 && stability>=30 && difficulty<0.45) return {label:'descanso',priority:1,score:12};
+  return {label:'consolidação',priority:3,score:58+(4-box)*7+difficulty*10};
 }
 function nextReviewState(prev,grade,card){
-  const cur=prev||{box:0,due:null,reviews:0,streak:0,lapses:0,ease:2.5};
+  const fallbackStability=prev?.stability ?? BOX_INTERVALS[Math.min(prev?.box??0,BOX_INTERVALS.length-1)] ?? 1;
+  const fallbackDifficulty=prev?.difficulty ?? ({facil:0.25,medio:0.5,dificil:0.75}[card?.diff]??0.5);
+  const cur=prev||{box:0,due:null,reviews:0,streak:0,lapses:0,ease:2.5,stability:1,difficulty:fallbackDifficulty};
   const n={...cur,reviews:(cur.reviews||0)+1,lastGrade:grade};
   if(grade==='again'){
-    n.box=0;n.streak=0;n.lapses=(cur.lapses||0)+1;n.ease=clamp((cur.ease||2.5)-0.28,1.3,3.3);n.due=today();
+    n.box=0;n.streak=0;n.lapses=(cur.lapses||0)+1;n.ease=clamp((cur.ease||2.5)-0.22,1.3,3.3);
+    n.difficulty=clamp(fallbackDifficulty+0.09,0.1,0.95);n.stability=1;n.due=today();
   }else if(grade==='hard'){
-    n.box=clamp((cur.box||0),0,4);n.streak=0;n.ease=clamp((cur.ease||2.5)-0.08,1.3,3.3);n.due=new Date(Date.now()+Math.max(1,Math.round((BOX_INTERVALS[n.box]||1)*0.65))*86400000).toISOString().slice(0,10);
+    n.box=clamp(cur.box||0,0,4);n.streak=0;n.ease=clamp((cur.ease||2.5)-0.06,1.3,3.3);
+    n.difficulty=clamp(fallbackDifficulty+0.03,0.1,0.95);n.stability=clamp(fallbackStability*1.18,1,365);
+    n.due=localDateFromToday(Math.max(1,Math.round(n.stability*0.55)));
   }else if(grade==='good'){
-    n.box=clamp((cur.box||0)+1,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.05,1.3,3.3);n.due=new Date(Date.now()+Math.max(1,Math.round((BOX_INTERVALS[n.box]||1)*(n.ease/2.5)))*86400000).toISOString().slice(0,10);
+    n.box=clamp((cur.box||0)+1,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.05,1.3,3.3);
+    n.difficulty=clamp(fallbackDifficulty-0.025,0.1,0.95);n.stability=clamp(fallbackStability*(2.0+(1-fallbackDifficulty)*0.55),1,365);
+    n.due=localDateFromToday(Math.max(1,Math.round(n.stability)));
   }else{
-    n.box=clamp((cur.box||0)+2,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.12,1.3,3.3);n.due=new Date(Date.now()+Math.max(1,Math.round((BOX_INTERVALS[n.box]||1)*1.6*(n.ease/2.5)))*86400000).toISOString().slice(0,10);
+    n.box=clamp((cur.box||0)+2,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.10,1.3,3.3);
+    n.difficulty=clamp(fallbackDifficulty-0.06,0.1,0.95);n.stability=clamp(fallbackStability*(3.0+(1-fallbackDifficulty)*0.8),1,365);
+    n.due=localDateFromToday(Math.max(1,Math.round(n.stability)));
   }
   return n;
 }
@@ -377,7 +414,7 @@ function Review({subject,srs,rateFlashcard,openTerms,setOpenTerms}){
   </div>
 }
 function Flash({card,state,rank,onOpen}){return <article className={`flash-card priority-${rank?.priority||3}`}><div className="flash-card-head"><span className="flash-tag">CAIXA {(state?.box??0)+1}/5</span><span className="rank-pill">{rank?.label||'nova'}</span></div><button className="flash-face" onClick={onOpen}><span className="flash-label">TENTE LEMBRAR</span><strong>{card.front}</strong><span className="flash-open">Abrir em foco</span></button></article>}
-function FlashModal({card,index,total,state,rank,onClose,onNext,onPrev,onRate}){const [flip,setFlip]=useState(false);useEffect(()=>setFlip(false),[card.id]);return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="flash-modal-panel"><div className="flash-modal-top"><div><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><span className="modal-rank">{rank.label}</span></div><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div><div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5 · {state?.reviews||0} revisões</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-rating"><span>Avalie a dificuldade desta lembrança</span><div><button className="rate-again" onClick={()=>onRate('again')}>Não lembrei</button><button className="rate-hard" onClick={()=>onRate('hard')}>Difícil</button><button className="rate-good" onClick={()=>onRate('good')}>Lembrei</button><button className="rate-easy" onClick={()=>onRate('easy')}>Fácil</button></div></div>}</div><div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div></div></div>}
+function FlashModal({card,index,total,state,rank,onClose,onNext,onPrev,onRate}){const [flip,setFlip]=useState(false);const [rated,setRated]=useState(null);useEffect(()=>{setFlip(false);setRated(null)},[card.id]);const register=(grade)=>{onRate(grade);setRated(grade)};return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="flash-modal-panel"><div className="flash-modal-top"><div><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><span className="modal-rank">{rank.label}</span></div><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div><div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5 · {state?.reviews||0} revisões</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-rating"><span>Avalie a dificuldade desta lembrança</span><div><button className="rate-again" onClick={()=>register('again')} disabled={!!rated}>Não lembrei</button><button className="rate-hard" onClick={()=>register('hard')} disabled={!!rated}>Difícil</button><button className="rate-good" onClick={()=>register('good')} disabled={!!rated}>Lembrei</button><button className="rate-easy" onClick={()=>register('easy')} disabled={!!rated}>Fácil</button></div>{rated&&<div className="rating-saved">✓ Registrado. A fila será reorganizada pela próxima revisão.</div>}</div>}</div><div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div></div></div>}
 function TermModal({term,index,total,onClose,onNext,onPrev}){return <div className="term-modal" role="dialog" aria-modal="true" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="term-modal-panel"><div className="flash-modal-top"><span className="flash-modal-count">CONCEITO {index+1} / {total}</span><button className="icon-btn" onClick={onClose}>×</button></div><span className="eyebrow">TERMO ESSENCIAL</span><h3>{term.term}</h3><p>{term.def}</p><div className="term-modal-nav"><button className="secondary-btn" onClick={onPrev}>← Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo →</button></div></div></div>}
 
 function isDue(sid,kind,id,srs){const x=srs?.[sid]?.[kind]?.[id]; return !x?.due || x.due<=today();}
