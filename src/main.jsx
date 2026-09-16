@@ -3,6 +3,15 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
+const ICON_PATHS = {
+  home: <path d="M4 11.5 12 4l8 7.5M6 10v9.5a1 1 0 0 0 1 1h3.5v-6h3v6H17a1 1 0 0 0 1-1V10" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>,
+  disciplines: <><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5v-13Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></>,
+  flashcards: <><rect x="3.5" y="7" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M7 4h11a2 2 0 0 1 2 2v9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
+  calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><circle cx="8" cy="13.5" r="1.15" fill="currentColor"/><circle cx="12" cy="13.5" r="1.15" fill="currentColor"/></>,
+  settings: <><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
+};
+function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
+
 const STORAGE = 'nexo:v6.2.0';
 const LEGACY_STORAGES = ['nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
@@ -61,11 +70,11 @@ function App(){
         <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
         <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
         <nav className="side-nav">
-          <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
-          <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
-          <NavButton active={page.name==='flashcards'} icon="▣" label="Flashcards" onClick={openFlashcards}/>
-          <NavButton active={page.name==='calendar'} icon="□" label="Calendário" onClick={openCalendar}/>
-          <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
+          <NavButton active={page.name==='home'} icon={<Icon name="home"/>} label="Início" onClick={goHome}/>
+          <NavButton active={page.name==='disciplines'} icon={<Icon name="disciplines"/>} label="Disciplinas" onClick={openDisciplines}/>
+          <NavButton active={page.name==='flashcards'} icon={<Icon name="flashcards"/>} label="Flashcards" onClick={openFlashcards}/>
+          <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
+          <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
         <div className="side-foot">v6.2.0 · universal</div>
       </aside>
@@ -97,7 +106,7 @@ function Auth({mode,setMode,onLogin}){
   const submit=async e=>{e.preventDefault();setError('');if(!username.trim()||!password){setError('Preencha usuário e senha.');return}const clean=username.trim().toLowerCase();if(!/^[a-z0-9_.-]{3,24}$/.test(clean)){setError('O usuário precisa ter 3–24 caracteres e usar letras, números, ponto, hífen ou _.');return}setBusy(true);try{const users=load('users',{});const pass=await hashPassword(password);if(mode==='register'){if(!name.trim()){setError('Informe seu nome.');return}if(users[clean]){setError('Esse usuário já existe.');return}if(password!==confirm){setError('As senhas não coincidem.');return}users[clean]={name:name.trim(),username:clean,passwordHash:pass,createdAt:Date.now()};save('users',users);}else{if(!users[clean]||users[clean].passwordHash!==pass){setError('Usuário ou senha inválidos.');return}}const user=users[clean]||{};save('session',{name:user.name||clean,username:clean});onLogin({name:user.name||clean,username:clean});}finally{setBusy(false)}};
   return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">N</span><div><strong>NEXO</strong><small>estudo por conexões</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
 }
-function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><span>⌂</span>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><span>◫</span>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><span>▣</span>Cards</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><span>□</span>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><span>⚙</span>Config.</button></nav>}
+function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><Icon name="home" size={20}/>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><Icon name="disciplines" size={20}/>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><Icon name="flashcards" size={20}/>Cards</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><Icon name="calendar" size={20}/>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><Icon name="settings" size={20}/>Config.</button></nav>}
 
 function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
 
