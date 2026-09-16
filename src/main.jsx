@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { SUBJECTS } from './content.js';
 import './styles.css';
 
-const STORAGE = 'nexo:v6.1.4';
-const LEGACY_STORAGES = ['nexo:v6.1.1','nexo:v4'];
+const STORAGE = 'nexo:v6.2.0';
+const LEGACY_STORAGES = ['nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const load = (k, fallback) => { try {
@@ -32,11 +32,13 @@ function App(){
   const [srs,setSrs] = useState(load('srs',{}));
   const [openTerms,setOpenTerms] = useState({});
   const [sidebarCollapsed,setSidebarCollapsed] = useState(load('sidebarCollapsed',false));
+  const [calendarEvents,setCalendarEvents] = useState(load('calendarEvents',[]));
 
   useEffect(()=>save('uiMode',uiMode),[uiMode]);
   useEffect(()=>save('theme',theme),[theme]);
   useEffect(()=>save('srs',srs),[srs]);
   useEffect(()=>save('sidebarCollapsed',sidebarCollapsed),[sidebarCollapsed]);
+  useEffect(()=>save('calendarEvents',calendarEvents),[calendarEvents]);
   if(!session) return <Auth mode={authMode} setMode={setAuthMode} onLogin={u=>setSession(u)}/>;
 
   const subject = SUBJECTS.find(s=>s.id===page.subjectId) || null;
@@ -45,6 +47,7 @@ function App(){
   const openSubject = (id) => { setPage({name:'subject',subjectId:id}); setSubjectTab('learn'); setTopicIdx(0); setQuestionIdx(0); setAnswers({}); };
   const openSettings = () => setPage({name:'settings',subjectId:null});
   const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
+  const openCalendar = () => setPage({name:'calendar',subjectId:null});
   const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
   const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
 
@@ -61,9 +64,10 @@ function App(){
           <NavButton active={page.name==='home'} icon="⌂" label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon="◫" label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='flashcards'} icon="▣" label="Flashcards" onClick={openFlashcards}/>
+          <NavButton active={page.name==='calendar'} icon="□" label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon="⚙" label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.1.3 · universal</div>
+        <div className="side-foot">v6.2.0 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -77,10 +81,11 @@ function App(){
           {page.name==='home' && <Home subjects={SUBJECTS} onOpen={openSubject} srs={srs}/>} 
           {page.name==='disciplines' && <Disciplines subjects={SUBJECTS} onOpen={openSubject}/>} 
           {page.name==='flashcards' && <FlashcardsHub subjects={SUBJECTS} srs={srs} rateFlashcard={rateFlashcard}/>}
+          {page.name==='calendar' && <Calendar subjects={SUBJECTS} events={calendarEvents} setEvents={setCalendarEvents}/>} 
           {page.name==='settings' && <Settings uiMode={uiMode} setUiMode={setUiMode} theme={theme} setTheme={setTheme}/>} 
           {page.name==='subject' && subject && <SubjectView subject={subject} tab={subjectTab} setTab={setSubjectTab} topicIdx={topicIdx} setTopicIdx={setTopicIdx} questionIdx={questionIdx} setQuestionIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
         </div>
-        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onSettings={openSettings}/>
+        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onCalendar={openCalendar} onSettings={openSettings}/>
       </main>
     </div>
   </div>
@@ -92,7 +97,7 @@ function Auth({mode,setMode,onLogin}){
   const submit=async e=>{e.preventDefault();setError('');if(!username.trim()||!password){setError('Preencha usuário e senha.');return}const clean=username.trim().toLowerCase();if(!/^[a-z0-9_.-]{3,24}$/.test(clean)){setError('O usuário precisa ter 3–24 caracteres e usar letras, números, ponto, hífen ou _.');return}setBusy(true);try{const users=load('users',{});const pass=await hashPassword(password);if(mode==='register'){if(!name.trim()){setError('Informe seu nome.');return}if(users[clean]){setError('Esse usuário já existe.');return}if(password!==confirm){setError('As senhas não coincidem.');return}users[clean]={name:name.trim(),username:clean,passwordHash:pass,createdAt:Date.now()};save('users',users);}else{if(!users[clean]||users[clean].passwordHash!==pass){setError('Usuário ou senha inválidos.');return}}const user=users[clean]||{};save('session',{name:user.name||clean,username:clean});onLogin({name:user.name||clean,username:clean});}finally{setBusy(false)}};
   return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">N</span><div><strong>NEXO</strong><small>estudo por conexões</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
 }
-function MobileNav({page,onHome,onDisciplines,onFlashcards,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><span>⌂</span>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><span>◫</span>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><span>▣</span>Cards</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><span>⚙</span>Config.</button></nav>}
+function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><span>⌂</span>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><span>◫</span>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><span>▣</span>Cards</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><span>□</span>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><span>⚙</span>Config.</button></nav>}
 
 function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
 
@@ -140,6 +145,40 @@ function SubjectTile({subject,onClick,srs}){
     <p>{subject.learningGoal}</p>
     <div className="tile-meta"><span>{subject.topics.length} módulos</span><span>{subject.questions.length} questões</span></div>
   </button>
+}
+
+function isoDay(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function parseDay(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d,12); }
+function monthLabel(d){ return d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
+function Calendar({subjects,events,setEvents}){
+  const now=new Date(); now.setHours(12,0,0,0);
+  const [cursor,setCursor]=useState(new Date(now.getFullYear(),now.getMonth(),1,12));
+  const [selected,setSelected]=useState(isoDay(now));
+  const [showForm,setShowForm]=useState(false);
+  const [notifications,setNotifications]=useState('idle');
+  const [form,setForm]=useState({title:'',date:selected,start:'',duration:'60',type:'estudo',subjectId:subjects[0]?.id||'',topicId:subjects[0]?.topics[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});
+  const first=new Date(cursor.getFullYear(),cursor.getMonth(),1,12), offset=(first.getDay()+6)%7;
+  const daysIn=new Date(cursor.getFullYear(),cursor.getMonth()+1,0,12).getDate();
+  const cells=[]; for(let i=0;i<offset;i++) cells.push(null); for(let d=1;d<=daysIn;d++) cells.push(new Date(cursor.getFullYear(),cursor.getMonth(),d,12)); while(cells.length%7) cells.push(null);
+  const dayEvents=(day)=>events.filter(e=>e.date===isoDay(day)).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+  const selectedEvents=events.filter(e=>e.date===selected).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+  const subject=subjects.find(s=>s.id===form.subjectId)||subjects[0];
+  const selectedTopic=subject?.topics.find(t=>t.id===form.topicId)||subject?.topics[0];
+  const setField=(k,v)=>setForm(f=>{const next={...f,[k]:v}; if(k==='subjectId'){const s=subjects.find(x=>x.id===v);next.topicId=s?.topics[0]?.id||'';} return next;});
+  const openNew=(date=selected)=>{setSelected(date);setForm({title:'',date,start:'',duration:'60',type:'estudo',subjectId:subjects[0]?.id||'',topicId:subjects[0]?.topics[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});setShowForm(true);};
+  const saveEvent=(e)=>{e.preventDefault(); if(!form.title.trim()||!form.date)return; const base=Date.now(); const dates=form.repeatWeekly?Array.from({length:8},(_,i)=>{const d=parseDay(form.date);d.setDate(d.getDate()+i*7);return isoDay(d)}):[form.date]; const created=dates.map((date,i)=>({...form,id:`ev-${base}-${i}`,date,title:form.title.trim(),createdAt:base+i,repeatWeekly:!!form.repeatWeekly})); setEvents(prev=>[...prev,...created]); setSelected(form.date); setShowForm(false);};
+  const removeEvent=(id)=>setEvents(prev=>prev.filter(e=>e.id!==id));
+  const enableNotifications=async()=>{ if(!('Notification' in window)){setNotifications('unsupported');return;} const p=await Notification.requestPermission(); setNotifications(p); if(p==='granted') new Notification('NEXO · lembretes ativos',{body:'Os lembretes serão verificados enquanto o NEXO estiver aberto.'}); };
+  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); events.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`NEXO · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(subjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[events,subjects]);
+  return <div className="page calendar-page">
+    <div className="page-head-row calendar-head"><div><span className="eyebrow">PLANEJAMENTO</span><h1 className="page-h1">Calendário</h1><p className="page-lead">Organize provas, módulos, questões, revisões e blocos de estudo em um único lugar.</p></div><div className="calendar-head-actions"><button className="primary-btn" onClick={()=>openNew(selected)}>+ Nova tarefa</button><button className={`secondary-btn ${notifications==='granted'?'is-active':''}`} onClick={enableNotifications}>{notifications==='granted'?'Lembretes ativos':'Ativar lembretes'}</button></div></div>
+    <section className="calendar-layout">
+      <div className="calendar-main"><div className="calendar-toolbar"><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()-1,1,12))}>‹</button><strong>{monthLabel(cursor)}</strong><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()+1,1,12))}>›</button><button className="today-link" onClick={()=>{setCursor(new Date(now.getFullYear(),now.getMonth(),1,12));setSelected(isoDay(now));}}>Hoje</button></div><div className="calendar-weekdays">{['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=><span key={x}>{x}</span>)}</div><div className="calendar-grid">{cells.map((d,i)=>{const key=d?isoDay(d):`empty-${i}`; const evs=d?dayEvents(d):[]; const isSel=d&&isoDay(d)===selected; const isToday=d&&isoDay(d)===isoDay(now); return <button key={key} className={`calendar-day ${!d?'empty':''} ${isSel?'selected':''} ${isToday?'today':''}`} onClick={()=>d&&setSelected(isoDay(d))} disabled={!d}><span className="day-number">{d?d.getDate():''}</span>{d&&evs.slice(0,3).map(ev=><span key={ev.id} className={`day-event type-${ev.type}`}>{ev.start&&<b>{ev.start}</b>} {ev.title}</span>)}{d&&evs.length>3&&<small>+{evs.length-3}</small>}</button>})}</div></div>
+      <aside className="calendar-side"><div className="calendar-side-head"><div><span className="eyebrow">AGENDA DO DIA</span><h3>{parseDay(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button className="icon-btn" onClick={()=>openNew(selected)}>+</button></div>{selectedEvents.length?<div className="agenda-list">{selectedEvents.map(ev=><article className="agenda-item" key={ev.id}><div className={`agenda-dot type-${ev.type}`}></div><div className="agenda-copy"><strong>{ev.title}</strong><span>{ev.start||'Sem horário'} · {ev.duration||60} min</span>{ev.subjectId&&<small>{subjects.find(s=>s.id===ev.subjectId)?.name}{ev.topicId?' · '+(subjects.find(s=>s.id===ev.subjectId)?.topics.find(t=>t.id===ev.topicId)?.title||''):''}</small>}{ev.notes&&<small>{ev.notes}</small>}</div><button className="icon-btn subtle" onClick={()=>removeEvent(ev.id)} aria-label="Excluir tarefa">×</button></article>)}</div>:<div className="calendar-empty"><strong>Sem tarefas neste dia.</strong><span>Use o calendário para reservar tempo para conteúdo, questões, revisão ou prova.</span><button className="secondary-btn" onClick={()=>openNew(selected)}>Adicionar tarefa</button></div>}</aside>
+    </section>
+    <section className="calendar-routines"><div><span className="eyebrow">ESTRUTURA DE ESTUDO</span><h3>O calendário conecta intenção e execução</h3><p>Registre o que vai estudar e a tarefa deixa de ser uma promessa solta. Ao abrir uma tarefa de estudo, o NEXO já associa disciplina e módulo.</p></div><div className="routine-points"><span><b>Estudo</b> reservar tempo para um módulo ou bloco</span><span><b>Questões</b> separar treino específico</span><span><b>Revisão</b> criar espaço para recuperação</span><span><b>Prova</b> marcar datas que mudam a prioridade</span></div></section>
+    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{(subject?.topics||[]).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o NEXO estiver aberto.</small></form></div>}
+  </div>
 }
 
 function Settings({uiMode,setUiMode,theme,setTheme}){
