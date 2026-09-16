@@ -47,3 +47,9 @@ A interface de Aprender foi reorganizada como uma superfície editorial de estud
 A revisão usa uma fila adaptativa baseada em domínio, dificuldade, estabilidade e atraso, em vez de depender apenas de uma alternância binária entre lembrar e esquecer. As perguntas de múltipla escolha passam por uma auditoria local para detectar alternativas duplicadas e formulações potencialmente entregadoras.
 
 Use `npm run audit` para executar a auditoria de conteúdo antes de publicar.
+
+
+## Pesquisa de referência
+A estrutura visual dos esquemas de atmosfera e ENSO foi redesenhada a partir de referências educacionais da NOAA/PMEL. O NEXO mantém as representações como SVG local para funcionar de forma estável no GitHub Pages.
+
+A lógica pedagógica de recuperação ativa e espaçamento segue princípios consolidados da literatura de aprendizagem; o calendário foi desenhado para transformar intenção de estudo em blocos executáveis.
