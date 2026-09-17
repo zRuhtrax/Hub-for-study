@@ -21,8 +21,13 @@ for(const [name,re] of must){
     errors++;
   }
 }
-if(!/v6\.2\.4/.test(main+css)){console.error('[ERRO] QA: versão 6.2.4 ausente');errors++;}
+if(!/v6\.3\.0/.test(main+css)){console.error('[ERRO] QA: versão 6.3.0 ausente');errors++;}
+
+if(!/VÉSPERA/.test(main)){console.error('[ERRO] QA: branding VÉSPERA ausente');errors++;}
+if(!/function QuestionsHub/.test(main)){console.error('[ERRO] QA: hub de questões ausente');errors++;}
+if(!/Europa Medieval/.test(content)){console.error('[ERRO] QA: matéria Europa Medieval ausente');errors++;}
+if(!/Climatologia/.test(content)){console.error('[ERRO] QA: matéria Climatologia ausente');errors++;}
 const badOutsideHtml=content.includes('</html>');
 if(badOutsideHtml){console.error('[ERRO] QA: content.js contém fechamento de HTML');errors++;}
-console.log(`QA estrutural NEXO v6.2.5: ${errors ? errors+' erro(s)' : 'OK'}`);
+console.log(`QA estrutural VÉSPERA v6.3.0: ${errors ? errors+' erro(s)' : 'OK'}`);
 if(errors)process.exit(1);

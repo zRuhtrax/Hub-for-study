@@ -4,7 +4,7 @@ let errors = 0;
 let warnings = 0;
 const absoluteWords = /\b(sempre|nunca|todos|todas|apenas|somente|qualquer|automaticamente|exclusivamente)\b/i;
 const totalModules = SUBJECTS.reduce((n,s)=>n+(s.topics?.length ?? 0),0);
-const totalPractice = SUBJECTS.reduce((n,s)=>n+(s.questions?.length ?? 0),0);
+const totalPractice = SUBJECTS.reduce((n,s)=>{ const seen=new Set(); const all=[...(s.questions??[]),...(s.topics??[]).flatMap(t=>t.quiz??[])]; return n+all.filter(q=>{const k=q?.q||JSON.stringify(q); if(seen.has(k)) return false; seen.add(k); return true;}).length; },0);
 const registryIds = new Set(DISCIPLINES.flatMap(d=>d.subjectIds||[]));
 
 function checkMC(label, q) {
@@ -78,6 +78,6 @@ for (const id of registryIds) {
 }
 
 const visualCount = SUBJECTS.reduce((n,s)=>n+(s.topics ?? []).reduce((m,t)=>m+(t.html.match(/visual-lesson/g)?.length ?? 0),0),0);
-console.log(`Auditoria NEXO v6.2.5: ${DISCIPLINES.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) de prática, ${visualCount} bloco(s) visual(is).`);
+console.log(`Auditoria VÉSPERA v6.3.0: ${DISCIPLINES.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) disponíveis, ${visualCount} bloco(s) visual(is).`);
 console.log(`Erros: ${errors} · Avisos: ${warnings}`);
 if (errors) process.exit(1);
