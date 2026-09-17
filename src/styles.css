@@ -2349,3 +2349,95 @@ html body .app .study-content .visual-body > svg {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   VÉSPERA v6.3.1 — estabilização dos hubs adicionados na 6.3.0
+   ========================================================= */
+
+/* Branding do topo e da versão recolhida */
+.brand-word{display:inline-flex;align-items:baseline;gap:0;font-weight:900;letter-spacing:-.06em;white-space:nowrap;color:var(--ink);}
+.brand-word b{color:var(--accent);font-size:1.18em;margin-right:.02em;}
+
+/* Página inicial: grupos de disciplinas voltam a usar a linguagem do restante do produto */
+.home-discipline-groups{display:grid;gap:12px;}
+.home-discipline-group{border-top:1px solid var(--line);background:transparent;}
+.home-discipline-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);padding:18px 2px;text-align:left;min-width:0;transition:background .18s ease,padding .22s ease;}
+.home-discipline-head:hover{background:var(--surface-2);}
+.home-discipline-head>div{display:flex;align-items:center;gap:14px;min-width:0;}
+.home-discipline-head>div>span{font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.08em;color:var(--accent);min-width:24px;}
+.home-discipline-head>div>div{min-width:0;}
+.home-discipline-head b{display:block;font-size:17px;letter-spacing:-.02em;}
+.home-discipline-head small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:3px;max-width:760px;}
+.home-discipline-toggle{width:28px;height:28px;display:grid;place-items:center;flex:0 0 auto;border:1px solid var(--line);color:var(--muted);border-radius:50%;font-size:18px;line-height:1;transition:transform .2s ease,border-color .2s ease,color .2s ease;}
+.home-discipline-group.is-open .home-discipline-toggle{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));color:var(--accent);}
+.home-matter-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px 0 0;}
+.home-matter-list .subject-tile{min-width:0;}
+
+/* Hub de questões: controles e resultados não ficam mais “soltos” */
+.questions-page{max-width:1240px;}
+.questions-controls{display:grid;grid-template-columns:minmax(0,1fr) 250px 150px;gap:12px;margin-bottom:22px;}
+.questions-controls label{display:grid;gap:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);min-width:0;}
+.questions-controls input,.questions-controls select{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:12px 13px;outline:none;border-radius:8px;}
+.questions-controls input:focus,.questions-controls select:focus{border-color:var(--accent);box-shadow:var(--focus-ring);}
+.question-toggle{display:grid!important;align-content:end!important;}
+.question-toggle button{min-height:44px;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:0 13px;border-radius:8px;text-align:left;transition:border-color .18s ease,background .18s ease,color .18s ease;}
+.question-toggle button:hover{border-color:var(--accent);color:var(--ink);}
+.question-toggle button.is-on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 11%,var(--surface));color:var(--ink);}
+.question-hub-list{display:grid;gap:14px;}
+.question-hub-item{border:1px solid var(--line);background:var(--surface);padding:22px 24px;border-radius:12px;min-width:0;}
+.question-hub-meta{display:flex;justify-content:space-between;align-items:center;gap:16px;color:var(--muted);font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.question-hub-meta span:first-child{color:var(--accent);font-weight:800;overflow-wrap:anywhere;}
+.question-hub-item h3{font-size:21px;line-height:1.42;letter-spacing:-.02em;margin:0 0 18px;max-width:920px;}
+.question-hub-item .options,.question-hub-item .open-wrap{max-width:100%;}
+.question-hub-item .options-grid{display:grid;gap:8px;}
+.question-hub-item .option{min-width:0;}
+.question-matter-link{margin-top:14px;border:0;background:none;color:var(--accent);padding:4px 0;font-size:11px;font-weight:750;}
+.question-matter-link:hover{text-decoration:underline;}
+.questions-hub-more{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:14px;color:var(--muted);font-size:11px;}
+
+/* Corrige a sensação de “página colapsada” quando um hub tem poucos elementos */
+.questions-page .empty-state,.flashcards-hub-page .empty-state{border:1px dashed var(--line);background:var(--surface);border-radius:12px;padding:28px;display:grid;gap:5px;}
+
+/* Hubs e linhas de matéria devem respeitar a mesma margem horizontal */
+.discipline-groups,.home-discipline-groups,.questions-page .page-head-row,.questions-page .questions-controls,.questions-page .question-hub-list{width:100%;min-width:0;}
+
+/* Sidebar recolhida: nada cria scroll horizontal */
+@media (min-width:901px){
+  html body .app .sidebar{overflow-x:hidden!important;}
+  html body .app .sidebar .brand{min-width:0;overflow:hidden;}
+  html body .app .sidebar .brand-lockup{min-width:0;white-space:nowrap;}
+  html body .app.sidebar-collapsed .sidebar .brand{justify-content:center;padding-left:4px;padding-right:4px;}
+  html body .app.sidebar-collapsed .sidebar .brand-lockup{justify-content:center;}
+  html body .app.sidebar-collapsed .sidebar .brand-exo,
+  html body .app.sidebar-collapsed .sidebar .brand-sub,
+  html body .app.sidebar-collapsed .sidebar .side-foot{display:none;}
+  html body .app.sidebar-collapsed .sidebar .brand-n{font-size:30px;}
+  html body .app.sidebar-collapsed .sidebar .nav-item{justify-content:center;padding-left:8px;padding-right:8px;}
+  html body .app.sidebar-collapsed .sidebar .nav-item>span:last-child{display:none;}
+}
+
+@media (max-width:900px){
+  .questions-controls{grid-template-columns:1fr 1fr;}
+  .question-toggle{grid-column:1/-1;}
+  .home-matter-list{grid-template-columns:1fr;}
+  .question-hub-meta{align-items:flex-start;flex-direction:column;gap:5px;}
+  .questions-hub-more{align-items:flex-start;flex-direction:column;}
+}
+@media (max-width:560px){
+  .questions-controls{grid-template-columns:1fr;}
+  .question-toggle{grid-column:auto;}
+  .question-hub-item{padding:18px 16px;}
+  .question-hub-item h3{font-size:18px;}
+}
+
+/* Hub containers that were newly introduced in v6.3.0 */
+.calendar-page{max-width:1240px;}
+.subject-summary{margin-top:44px;padding-top:28px;border-top:1px solid var(--reading-line);}
+.subject-summary h3,.subject-summary h4{color:var(--reading-heading);}
+.subject-summary p,.subject-summary li{color:var(--reading-muted);}
+
+/* Keep new hub controls readable inside the global button/input reset */
+.questions-page button,
+.flashcards-hub-page button,
+.disciplines-page button,
+.home-page button{min-width:0;}

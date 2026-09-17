@@ -13,7 +13,7 @@ const ICON_PATHS = {
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'vespera:v6.3.0';
+const STORAGE = 'vespera:v6.3.1';
 const LEGACY_STORAGES = [
   'nexo:v6.2.5','nexo:v6.2.4','nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
   'nexo:v6.1.4','nexo:v6.1.3','nexo:v6.1.2','nexo:v6.1.1','nexo:v6.1.0',
@@ -94,7 +94,7 @@ function App(){
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.3.0 · universal</div>
+        <div className="side-foot">v6.3.1 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -215,7 +215,7 @@ function QuestionsHub({subjects,onOpenSubject}){
       const ans=answers[item.key];
       return <article className="question-hub-item" key={item.key}><div className="question-hub-meta"><span>{item.subject.name}</span><span>{item.q.challenge?'DESAFIO':'PRÁTICA'} · {item.q.type==='open'?'ABERTA':'MÚLTIPLA ESCOLHA'}</span></div><h3>{item.q.q}</h3>{item.q.type==='open'?<OpenQuestion q={item.q} answered={ans} onAnswer={v=>setAnswers(prev=>({...prev,[item.key]:{value:v,show:prev[item.key]?.show||false}}))}/>:<MCQuestion q={item.q} answered={ans} onAnswer={v=>setAnswers(prev=>({...prev,[item.key]:v}))}/>}<button className="question-matter-link" onClick={()=>onOpenSubject(item.subject.id)}>Abrir {item.subject.name}</button></article>
     })}{!shown.length&&<div className="empty-state"><strong>Nenhuma questão encontrada.</strong><span>Experimente remover filtros ou pesquisar outro conceito.</span></div>}</div>
-    {filtered.length>12&&<div className="questions-hub-more"><span>Mostrando 12 de {filtered.length}</span><button className="secondary-btn" onClick={()=>setOnlyChallenges(false)}>Limpe o filtro para ampliar a fila</button></div>}
+    {filtered.length>12&&<div className="questions-hub-more"><span>Mostrando 12 de {filtered.length}</span><button className="secondary-btn" onClick={()=>{setOnlyChallenges(false);setSubjectFilter('all');setQuery('')}}>Limpar filtros</button></div>}
   </div>
 }
 
