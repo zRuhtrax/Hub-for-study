@@ -34,6 +34,8 @@ const load = (k, fallback) => { try {
 const save = (k,v) => localStorage.setItem(`${STORAGE}:${k}`, JSON.stringify(v));
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 
+const safeArray = (x) => Array.isArray(x) ? x : [];
+
 function App(){
   const [session,setSession] = useState(load('session',null));
   const [authMode,setAuthMode] = useState('login');
@@ -124,8 +126,22 @@ function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings
 function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
 
 function Home({subjects,onOpen,srs}){
-  const totals = useMemo(()=>subjects.reduce((a,s)=>{a.topics+=s.topics.length;a.questions+=s.questions.length;a.cards+=s.flashcards.length+s.keywords.length;return a},{topics:0,questions:0,cards:0}),[subjects]);
-  const due = subjects.reduce((n,s)=>n+s.flashcards.filter(f=>isDue(s.id,'flashcards',f.id,srs)).length+s.keywords.filter(k=>isDue(s.id,'keywords',k.id,srs)).length,0);
+  const safeSubjects = safeArray(subjects);
+  const totals = useMemo(()=>safeSubjects.reduce((a,s)=>{
+    const topics = safeArray(s?.topics);
+    const questions = safeArray(s?.questions);
+    const flashcards = safeArray(s?.flashcards);
+    const keywords = safeArray(s?.keywords);
+    a.topics += topics.length;
+    a.questions += questions.length;
+    a.cards += flashcards.length + keywords.length;
+    return a;
+  },{topics:0,questions:0,cards:0}),[safeSubjects]);
+  const due = safeSubjects.reduce((n,s)=>{
+    const flashcards = safeArray(s?.flashcards);
+    const keywords = safeArray(s?.keywords);
+    return n + flashcards.filter(f=>isDue(s.id,'flashcards',f.id,srs)).length + keywords.filter(k=>isDue(s.id,'keywords',k.id,srs)).length;
+  },0);
   return <div className="page home-page">
     <section className="hero-grid home-hero-clean">
       <div><div className="eyebrow">NEXO</div><h1>Entender primeiro.<br/><em>Conectar depois.</em></h1><p>Um espaço para estudar por mecanismos, relações e recuperação ativa, sem transformar aprendizado em uma coleção de números.</p></div>
@@ -135,14 +151,14 @@ function Home({subjects,onOpen,srs}){
       <div className="today-panel-side"><span>RECUPERAÇÃO</span><strong>{due ? 'Prioridade ativa' : 'Sem pendências'}</strong><small>O sistema ordena seus itens pelo histórico recente.</small></div>
     </section>
     <section className="metric-overview metric-overview-4">
-      <OverviewMetric value={DISCIPLINES.length} label="disciplinas" />
-      <OverviewMetric value={subjects.length} label="matérias ativas" />
+      <OverviewMetric value={safeArray(DISCIPLINES).length} label="disciplinas" />
+      <OverviewMetric value={safeSubjects.length} label="matérias ativas" />
       <OverviewMetric value={totals.questions} label="questões" />
       <OverviewMetric value={due} label="revisões hoje"/>
     </section>
-    <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{subjects.length} {subjects.length===1?'disciplina':'disciplinas'}</span></section>
-    <div className={`subjects-grid count-${subjects.length} ${subjects.length%2?'odd':''}`}>
-      {subjects.map(s=><SubjectTile key={s.id} subject={s} onClick={()=>onOpen(s.id)} srs={srs}/>)}
+    <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{safeSubjects.length} {safeSubjects.length===1?'disciplina':'disciplinas'}</span></section>
+    <div className={`subjects-grid count-${safeSubjects.length} ${safeSubjects.length%2?'odd':''}`}>
+      {safeSubjects.map(s=><SubjectTile key={s.id} subject={s} onClick={()=>onOpen(s.id)} srs={srs}/>)}
     </div>
   </div>
 }
@@ -152,24 +168,25 @@ function Disciplines({subjects,onOpen}){
   const [query,setQuery]=useState('');
   const [open,setOpen]=useState(()=>new Set(['geografia','historia']));
   const q=query.trim().toLowerCase();
-  const groups=DISCIPLINES.map(d=>{const matters=subjects.filter(s=>(d.subjectIds||[]).includes(s.id));const match=!q||`${d.name} ${d.description} ${matters.map(s=>`${s.name} ${s.learningGoal} ${s.topics.map(t=>t.title).join(' ')}`).join(' ')}`.toLowerCase().includes(q);return {...d,matters,match};}).filter(d=>d.match);
+  const groups=safeArray(DISCIPLINES).map(d=>{const matters=safeArray(subjects).filter(s=>safeArray(d.subjectIds).includes(s.id));const match=!q||`${d.name} ${d.description} ${matters.map(s=>`${s.name} ${s.learningGoal} ${safeArray(s.topics).map(t=>t.title).join(' ')}`).join(' ')}`.toLowerCase().includes(q);return {...d,matters,match};}).filter(d=>d.match);
   const toggle=id=>setOpen(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
   return <div className="page disciplines-page">
     <div className="disciplines-intro"><div><span className="eyebrow">MAPA DE ESTUDOS</span><h1 className="page-h1">Disciplinas</h1><p className="page-lead">Uma disciplina reúne matérias. A matéria organiza os capítulos e módulos que formam seu conteúdo de estudo.</p></div></div>
     <label className="discipline-search"><span>Pesquisar</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: História, Europa Medieval, clima..." /></label>
     <div className="discipline-groups">{groups.map(d=><section className={`discipline-group ${open.has(d.id)?'is-open':''}`} key={d.id}>
       <button className="discipline-group-head" onClick={()=>toggle(d.id)} aria-expanded={open.has(d.id)}><div><span className="tile-tag">DISCIPLINA</span><h3>{d.name}</h3><p>{d.description}</p></div><span className="discipline-chevron">{open.has(d.id)?'−':'+'}</span></button>
-      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{subject.topics.length} módulos</span><span>{subject.questions.length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
+      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{safeArray(subject.topics).length} módulos</span><span>{safeArray(subject.questions).length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
     </section>)}</div>
   </div>
 }
 function SubjectTile({subject,onClick,srs}){
-  const completed = subject.topics.filter(t=>Object.values(srs?.[subject.id]?.keywords||{}).length).length;
+  const topics = safeArray(subject?.topics);
+  const questions = safeArray(subject?.questions);
   return <button className="subject-tile" onClick={onClick}>
     <div className="tile-top"><span className="tile-tag">{subject.tag}</span><span className="tile-arrow">↗</span></div>
     <div className="tile-title">{subject.name}</div>
     <p>{subject.learningGoal}</p>
-    <div className="tile-meta"><span>{subject.topics.length} módulos</span><span>{subject.questions.length} questões</span></div>
+    <div className="tile-meta"><span>{topics.length} módulos</span><span>{questions.length} questões</span></div>
   </button>
 }
 
@@ -177,33 +194,34 @@ function isoDay(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYea
 function parseDay(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d,12); }
 function monthLabel(d){ return d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
 function Calendar({subjects,events,setEvents}){
+  const safeSubjects = safeArray(subjects);
   const now=new Date(); now.setHours(12,0,0,0);
   const [cursor,setCursor]=useState(new Date(now.getFullYear(),now.getMonth(),1,12));
   const [selected,setSelected]=useState(isoDay(now));
   const [showForm,setShowForm]=useState(false);
   const [notifications,setNotifications]=useState('idle');
-  const [form,setForm]=useState({title:'',date:selected,start:'',duration:'60',type:'estudo',subjectId:subjects[0]?.id||'',topicId:subjects[0]?.topics[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});
+  const [form,setForm]=useState({title:'',date:selected,start:'',duration:'60',type:'estudo',subjectId:safeSubjects[0]?.id||'',topicId:safeSubjects[0]?.topics?.[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});
   const first=new Date(cursor.getFullYear(),cursor.getMonth(),1,12), offset=(first.getDay()+6)%7;
   const daysIn=new Date(cursor.getFullYear(),cursor.getMonth()+1,0,12).getDate();
   const cells=[]; for(let i=0;i<offset;i++) cells.push(null); for(let d=1;d<=daysIn;d++) cells.push(new Date(cursor.getFullYear(),cursor.getMonth(),d,12)); while(cells.length%7) cells.push(null);
-  const dayEvents=(day)=>events.filter(e=>e.date===isoDay(day)).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-  const selectedEvents=events.filter(e=>e.date===selected).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-  const subject=subjects.find(s=>s.id===form.subjectId)||subjects[0];
-  const selectedTopic=subject?.topics.find(t=>t.id===form.topicId)||subject?.topics[0];
-  const setField=(k,v)=>setForm(f=>{const next={...f,[k]:v}; if(k==='subjectId'){const s=subjects.find(x=>x.id===v);next.topicId=s?.topics[0]?.id||'';} return next;});
-  const openNew=(date=selected)=>{setSelected(date);setForm({title:'',date,start:'',duration:'60',type:'estudo',subjectId:subjects[0]?.id||'',topicId:subjects[0]?.topics[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});setShowForm(true);};
+  const safeEvents = safeArray(events);
+  const dayEvents=(day)=>safeEvents.filter(e=>e.date===isoDay(day)).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+  const selectedEvents=safeEvents.filter(e=>e.date===selected).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+  const subject=safeSubjects.find(s=>s.id===form.subjectId)||safeSubjects[0];
+  const setField=(k,v)=>setForm(f=>{const next={...f,[k]:v}; if(k==='subjectId'){const s=safeSubjects.find(x=>x.id===v);next.topicId=s?.topics?.[0]?.id||'';} return next;});
+  const openNew=(date=selected)=>{setSelected(date);setForm({title:'',date,start:'',duration:'60',type:'estudo',subjectId:safeSubjects[0]?.id||'',topicId:safeSubjects[0]?.topics?.[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});setShowForm(true);};
   const saveEvent=(e)=>{e.preventDefault(); if(!form.title.trim()||!form.date)return; const base=Date.now(); const dates=form.repeatWeekly?Array.from({length:8},(_,i)=>{const d=parseDay(form.date);d.setDate(d.getDate()+i*7);return isoDay(d)}):[form.date]; const created=dates.map((date,i)=>({...form,id:`ev-${base}-${i}`,date,title:form.title.trim(),createdAt:base+i,repeatWeekly:!!form.repeatWeekly})); setEvents(prev=>[...prev,...created]); setSelected(form.date); setShowForm(false);};
   const removeEvent=(id)=>setEvents(prev=>prev.filter(e=>e.id!==id));
   const enableNotifications=async()=>{ if(!('Notification' in window)){setNotifications('unsupported');return;} const p=await Notification.requestPermission(); setNotifications(p); if(p==='granted') new Notification('NEXO · lembretes ativos',{body:'Os lembretes serão verificados enquanto o NEXO estiver aberto.'}); };
-  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); events.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`NEXO · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(subjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[events,subjects]);
+  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); safeEvents.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`NEXO · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[safeEvents,safeSubjects]);
   return <div className="page calendar-page">
     <div className="page-head-row calendar-head"><div><span className="eyebrow">PLANEJAMENTO</span><h1 className="page-h1">Calendário</h1><p className="page-lead">Organize provas, módulos, questões, revisões e blocos de estudo em um único lugar.</p></div><div className="calendar-head-actions"><button className="primary-btn" onClick={()=>openNew(selected)}>+ Nova tarefa</button><button className={`secondary-btn ${notifications==='granted'?'is-active':''}`} onClick={enableNotifications}>{notifications==='granted'?'Lembretes ativos':'Ativar lembretes'}</button></div></div>
     <section className="calendar-layout">
       <div className="calendar-main"><div className="calendar-toolbar"><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()-1,1,12))}>‹</button><strong>{monthLabel(cursor)}</strong><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()+1,1,12))}>›</button><button className="today-link" onClick={()=>{setCursor(new Date(now.getFullYear(),now.getMonth(),1,12));setSelected(isoDay(now));}}>Hoje</button></div><div className="calendar-weekdays">{['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=><span key={x}>{x}</span>)}</div><div className="calendar-grid">{cells.map((d,i)=>{const key=d?isoDay(d):`empty-${i}`; const evs=d?dayEvents(d):[]; const isSel=d&&isoDay(d)===selected; const isToday=d&&isoDay(d)===isoDay(now); return <button key={key} className={`calendar-day ${!d?'empty':''} ${isSel?'selected':''} ${isToday?'today':''}`} onClick={()=>d&&setSelected(isoDay(d))} disabled={!d}><span className="day-number">{d?d.getDate():''}</span>{d&&evs.slice(0,3).map(ev=><span key={ev.id} className={`day-event type-${ev.type}`}>{ev.start&&<b>{ev.start}</b>} {ev.title}</span>)}{d&&evs.length>3&&<small>+{evs.length-3}</small>}</button>})}</div></div>
-      <aside className="calendar-side"><div className="calendar-side-head"><div><span className="eyebrow">AGENDA DO DIA</span><h3>{parseDay(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button className="icon-btn" onClick={()=>openNew(selected)}>+</button></div>{selectedEvents.length?<div className="agenda-list">{selectedEvents.map(ev=><article className="agenda-item" key={ev.id}><div className={`agenda-dot type-${ev.type}`}></div><div className="agenda-copy"><strong>{ev.title}</strong><span>{ev.start||'Sem horário'} · {ev.duration||60} min</span>{ev.subjectId&&<small>{subjects.find(s=>s.id===ev.subjectId)?.name}{ev.topicId?' · '+(subjects.find(s=>s.id===ev.subjectId)?.topics.find(t=>t.id===ev.topicId)?.title||''):''}</small>}{ev.notes&&<small>{ev.notes}</small>}</div><button className="icon-btn subtle" onClick={()=>removeEvent(ev.id)} aria-label="Excluir tarefa">×</button></article>)}</div>:<div className="calendar-empty"><strong>Sem tarefas neste dia.</strong><span>Use o calendário para reservar tempo para conteúdo, questões, revisão ou prova.</span><button className="secondary-btn" onClick={()=>openNew(selected)}>Adicionar tarefa</button></div>}</aside>
+      <aside className="calendar-side"><div className="calendar-side-head"><div><span className="eyebrow">AGENDA DO DIA</span><h3>{parseDay(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button className="icon-btn" onClick={()=>openNew(selected)}>+</button></div>{selectedEvents.length?<div className="agenda-list">{selectedEvents.map(ev=><article className="agenda-item" key={ev.id}><div className={`agenda-dot type-${ev.type}`}></div><div className="agenda-copy"><strong>{ev.title}</strong><span>{ev.start||'Sem horário'} · {ev.duration||60} min</span>{ev.subjectId&&<small>{safeSubjects.find(s=>s.id===ev.subjectId)?.name}{ev.topicId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.topics?.find(t=>t.id===ev.topicId)?.title||''):''}</small>}{ev.notes&&<small>{ev.notes}</small>}</div><button className="icon-btn subtle" onClick={()=>removeEvent(ev.id)} aria-label="Excluir tarefa">×</button></article>)}</div>:<div className="calendar-empty"><strong>Sem tarefas neste dia.</strong><span>Use o calendário para reservar tempo para conteúdo, questões, revisão ou prova.</span><button className="secondary-btn" onClick={()=>openNew(selected)}>Adicionar tarefa</button></div>}</aside>
     </section>
     <section className="calendar-routines"><div><span className="eyebrow">ESTRUTURA DE ESTUDO</span><h3>O calendário conecta intenção e execução</h3><p>Registre o que vai estudar e a tarefa deixa de ser uma promessa solta. Ao abrir uma tarefa de estudo, o NEXO já associa disciplina e módulo.</p></div><div className="routine-points"><span><b>Estudo</b> reservar tempo para um módulo ou bloco</span><span><b>Questões</b> separar treino específico</span><span><b>Revisão</b> criar espaço para recuperação</span><span><b>Prova</b> marcar datas que mudam a prioridade</span></div></section>
-    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{(subject?.topics||[]).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o NEXO estiver aberto.</small></form></div>}
+    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{safeArray(subject?.topics).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o NEXO estiver aberto.</small></form></div>}
   </div>
 }
 
@@ -225,7 +243,7 @@ function Choice({active,onClick,icon,title,desc}){return <button className={`cho
 
 function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rateFlashcard,openTerms,setOpenTerms}){
   return <div className="page subject-page">
-    <div className="subject-head"><div><span className="eyebrow">{subject.discipline || subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.length}</strong><span>módulos</span></div></div>
+    <div className="subject-head"><div><span className="eyebrow">{subject.discipline || subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{safeArray(subject.topics).length}</strong><span>módulos</span></div></div>
     <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
     {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
     {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
@@ -234,7 +252,8 @@ function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQue
 }
 
 function Learn({subject,topicIdx,setTopicIdx}){
-  const topic=subject.topics[topicIdx];
+  const topics = safeArray(subject.topics);
+  const topic = topics[topicIdx] || topics[0];
   const firstRender=useRef(true);
   const [quizAnswers,setQuizAnswers]=useState({});
   const [modulesCollapsed,setModulesCollapsed]=useState(false);
@@ -245,7 +264,7 @@ function Learn({subject,topicIdx,setTopicIdx}){
     const handler=e=>{
       const node=e.currentTarget;
       const i=Number(node.dataset.topic);
-      if(Number.isFinite(i) && i<subject.topics.length) setTopicIdx(i);
+      if(Number.isFinite(i) && i<topics.length) setTopicIdx(i);
     };
     const keyHandler=ev=>{
       if(ev.key==='Enter'||ev.key===' '){
@@ -261,7 +280,7 @@ function Learn({subject,topicIdx,setTopicIdx}){
       n.removeEventListener('click',handler);
       n.removeEventListener('keydown',keyHandler);
     });
-  },[topicIdx,subject]);
+  },[topicIdx,subject,topics.length]);
   useEffect(()=>{setQuizAnswers({});},[topicIdx]);
   useEffect(()=>{
     if(firstRender.current){ firstRender.current=false; return; }
@@ -272,41 +291,45 @@ function Learn({subject,topicIdx,setTopicIdx}){
       window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
     });
   },[topicIdx]);
-  const miniQuiz=(topic.quiz||[]).slice(0,4);
-  const progress=((topicIdx+1)/subject.topics.length)*100;
+  if(!topic){
+    return <div className="learn-layout"><div className="study-pane"><div className="study-intro"><span className="study-intro-label">SEM CONTEÚDO</span><h2>Esta matéria ainda não tem módulos.</h2><p className="topic-sub">Adicione tópicos em <code>src/content.js</code> para começar.</p></div></div></div>;
+  }
+  const miniQuiz=safeArray(topic.quiz).slice(0,4);
+  const progress=topics.length ? ((topicIdx+1)/topics.length)*100 : 0;
   return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
     <aside className="module-index" aria-label="Módulos">
       <div className="module-index-head">
-        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {subject.topics.length}</span></div>
+        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {topics.length}</span></div>
         <button className="module-collapse-btn icon-only" onClick={()=>setModulesCollapsed(v=>!v)} aria-label={modulesCollapsed?'Mostrar nomes dos módulos':'Ocultar nomes dos módulos'} title={modulesCollapsed?'Expandir módulos':'Recolher módulos'}><span>{modulesCollapsed?'›':'‹'}</span></button>
       </div>
       <div className="module-index-progress"><i style={{width:`${progress}%`}}/></div>
       <div className="module-index-list">
-        {subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
+        {topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
       </div>
     </aside>
     <div className="mobile-module-picker">
       <label htmlFor="module-picker">Módulo atual</label>
       <select id="module-picker" value={topicIdx} onChange={e=>setTopicIdx(Number(e.target.value))}>
-        {subject.topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
+        {topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
       </select>
     </div>
     <div className="study-pane">
-      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
+      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
       <div className="study-intro">
         <span className="study-intro-label">IDEIA-GUIA</span>
         <h2>{topic.title}</h2>
         <p className="topic-sub">{topic.sub}</p>
       </div>
-      <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html)}} />
+      <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html||'')}} />
       {miniQuiz.length>0 && <section className="module-check redesigned-check"><div className="module-check-head"><div><span className="eyebrow">RECUPERAÇÃO ATIVA</span><h3>Antes de seguir</h3><p>Recupere a ideia principal sem voltar ao texto. O objetivo é testar o entendimento, não reconhecer a frase.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
-      {topicIdx===subject.topics.length-1 && subject.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(subject.summaryHtml)}} />}<div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
+      {topicIdx===topics.length-1 && subject.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(subject.summaryHtml)}} />}<div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(topics.length-1,i+1))}>Próximo módulo →</button></div>
     </div>
   </div>
 }
 function stableOptionOrder(q){
-  const items=q.options.map((text,index)=>({text,index}));
-  let seed=[...q.q].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),2166136261);
+  const options = safeArray(q.options);
+  const items=options.map((text,index)=>({text,index}));
+  let seed=[...(q.q||'')].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),2166136261);
   for(let i=items.length-1;i>0;i--){ seed=(seed*1664525+1013904223)>>>0; const j=seed%(i+1); [items[i],items[j]]=[items[j],items[i]]; }
   return {options:items.map(x=>x.text),originalIndex:items.map(x=>x.index),correct:items.findIndex(x=>x.index===q.correct),feedbackOrder:items.map(x=>x.index)};
 }
@@ -322,7 +345,8 @@ function ModuleQuestion({q,answer,onAnswer}){
 }
 
 function Practice({subject,idx,setIdx,answers,setAnswers}){
-  const qs=subject.questions; const q=qs[idx]; const answered=answers[idx];
+  const qs=safeArray(subject.questions); const q=qs[idx]||qs[0]; const answered=answers[idx];
+  if(!q) return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Sem questões</h2><p>Esta matéria ainda não tem questões de prática.</p></div></div></div>;
   return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2><p>Questões desenhadas para separar reconhecimento de compreensão.</p></div><span>{idx+1} / {qs.length}</span></div>
     <div className="progress-track"><div style={{width:`${((idx+1)/qs.length)*100}%`}}/></div>
     <article className="question-card"><div className="q-kind">{q.challenge?'INTEGRAÇÃO':'FIXAÇÃO'} · {q.type==='open'?'RESPOSTA ABERTA':'MÚLTIPLA ESCOLHA'}</div><h3>{q.q}</h3>
@@ -444,7 +468,7 @@ function MCQuestion({q,answered,onAnswer}){
   </div>
 }
 
-function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.value||'');const [show,setShow]=useState(false); return <div className="open-wrap"><textarea value={v} onChange={e=>{setV(e.target.value);onAnswer(e.target.value)}} placeholder="Escreva com suas próprias palavras..."/><button className="secondary-btn" onClick={()=>setShow(!show)}>{show?'Ocultar resposta-modelo':'Comparar com resposta-modelo'}</button>{show&&<div className="model-answer"><strong>Resposta-modelo</strong><p>{q.model}</p><div className="term-list">{q.terms?.map(t=><span key={t}>{t}</span>)}</div></div>}</div>}
+function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.value||'');const [show,setShow]=useState(false); return <div className="open-wrap"><textarea value={v} onChange={e=>{setV(e.target.value);onAnswer(e.target.value)}} placeholder="Escreva com suas próprias palavras..."/><button className="secondary-btn" onClick={()=>setShow(!show)}>{show?'Ocultar resposta-modelo':'Comparar com resposta-modelo'}</button>{show&&<div className="model-answer"><strong>Resposta-modelo</strong><p>{q.model}</p><div className="term-list">{safeArray(q.terms).map(t=><span key={t}>{t}</span>)}</div></div>}</div>}
 
 function localDateFromToday(days){
   const d=new Date();
@@ -499,25 +523,26 @@ function FlashcardsHub({subjects,srs,rateFlashcard}){
   const [subjectFilter,setSubjectFilter]=useState('all');
   const [focus,setFocus]=useState(null);
   const [expanded,setExpanded]=useState(false);
+  const safeSubjects = safeArray(subjects);
   const filtered=useMemo(()=>{
-    const pool=subjects.flatMap(subject=>subject.flashcards.map(card=>({subject,card}))).filter(({subject,card})=>{
+    const pool=safeSubjects.flatMap(subject=>safeArray(subject.flashcards).map(card=>({subject,card}))).filter(({subject,card})=>{
       const okSubject=subjectFilter==='all'||subject.id===subjectFilter;
       const q=query.trim().toLowerCase();
       return okSubject && (!q||`${subject.name} ${card.front} ${card.back}`.toLowerCase().includes(q));
     });
     return pool.sort((a,b)=>reviewRank(srs?.[a.subject.id]?.flashcards?.[a.card.id],a.card).score < reviewRank(srs?.[b.subject.id]?.flashcards?.[b.card.id],b.card).score ? 1 : -1);
-  },[subjects,srs,query,subjectFilter]);
+  },[safeSubjects,srs,query,subjectFilter]);
   const visible=expanded?filtered:filtered.slice(0,8);
   return <div className="page flashcards-hub-page">
     <div className="page-head-row"><div><span className="eyebrow">MEMÓRIA ATIVA</span><h1 className="page-h1">Flashcards</h1><p className="page-lead">Uma coletânea única para revisar por disciplina ou trabalhar a fila geral de recuperação.</p></div><div className="hub-count"><b>{filtered.length}</b><span>cards encontrados</span></div></div>
-    <div className="flash-hub-controls"><label>Pesquisar<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Termo, pergunta ou disciplina..." /></label><label>Disciplina<select value={subjectFilter} onChange={e=>setSubjectFilter(e.target.value)}><option value="all">Todas</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
+    <div className="flash-hub-controls"><label>Pesquisar<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Termo, pergunta ou disciplina..." /></label><label>Disciplina<select value={subjectFilter} onChange={e=>setSubjectFilter(e.target.value)}><option value="all">Todas</option>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
     <section className="flash-hub-section"><div className="flash-hub-list">{visible.map(({subject,card})=>{const state=srs?.[subject.id]?.flashcards?.[card.id];const rank=reviewRank(state,card);return <article key={`${subject.id}:${card.id}`} className="flash-hub-row"><div><span className="tile-tag">{subject.name}</span><strong>{card.front}</strong><small>{rank.label} · caixa {(state?.box??0)+1}/5</small></div><button className="secondary-btn" onClick={()=>setFocus({subject,card})}>Abrir</button></article>})}{!filtered.length&&<div className="empty-state"><strong>Nenhum flashcard encontrado.</strong><span>Altere a pesquisa ou o filtro.</span></div>}</div>{filtered.length>visible.length&&<button className="review-more" onClick={()=>setExpanded(true)}>Mostrar mais {filtered.length-visible.length}</button>}</section>
     {focus&&<FlashModal card={focus.card} index={Math.max(0,visible.findIndex(x=>x.card.id===focus.card.id))} total={filtered.length} state={srs?.[focus.subject.id]?.flashcards?.[focus.card.id]} rank={reviewRank(srs?.[focus.subject.id]?.flashcards?.[focus.card.id],focus.card)} onClose={()=>setFocus(null)} onNext={()=>{}} onPrev={()=>{}} onRate={(grade)=>rateFlashcard(focus.subject.id,focus.card.id,grade)}/>} 
   </div>
 }
 
 function Review({subject,srs,rateFlashcard,openTerms,setOpenTerms}){
-  const cards=subject.flashcards; const keywords=subject.keywords;
+  const cards=safeArray(subject.flashcards); const keywords=safeArray(subject.keywords);
   const [focusId,setFocusId]=useState(null); const [cardsExpanded,setCardsExpanded]=useState(false); const [termFocus,setTermFocus]=useState(null);
   const rankedCards=useMemo(()=>[...cards].sort((a,b)=>{const ra=reviewRank(srs?.[subject.id]?.flashcards?.[a.id],a),rb=reviewRank(srs?.[subject.id]?.flashcards?.[b.id],b);return rb.score-ra.score}),[cards,srs,subject.id]);
   const visibleCards=cardsExpanded?rankedCards:rankedCards.slice(0,Math.min(4,rankedCards.length));
@@ -547,7 +572,7 @@ function TermModal({term,index,total,onClose,onNext,onPrev}){return <div classNa
 function isDue(sid,kind,id,srs){const x=srs?.[sid]?.[kind]?.[id]; return !x?.due || x.due<=today();}
 function adaptThemeHtml(html){
   const map={'#F8F7F1':'var(--diagram-surface)','#374151':'var(--diagram-ink)','#5B6472':'var(--diagram-muted)','#D7DCE4':'var(--diagram-line)','#9AA4B3':'var(--diagram-line)','#6B7280':'var(--diagram-muted)','#475569':'var(--diagram-muted)','#3F5F9C':'var(--diagram-blue)','#5E87E8':'var(--diagram-blue)','#EAF0FF':'var(--diagram-blue-soft)','#EEF3FF':'var(--diagram-blue-soft)','#E3F3EB':'var(--diagram-green-soft)','#23835A':'var(--diagram-green)','#245E44':'var(--diagram-green-ink)','#E8F3DE':'var(--diagram-green-soft)','#346D45':'var(--diagram-green-ink)','#F9EED9':'var(--diagram-amber-soft)','#72551B':'var(--diagram-amber-ink)','#B77B19':'var(--diagram-amber)','#F8E1E1':'var(--diagram-red-soft)','#7B3434':'var(--diagram-red-ink)','#EEE9FA':'var(--diagram-purple-soft)','#4B3D74':'var(--diagram-purple-ink)','#CBD2DE':'var(--diagram-line)','#697384':'var(--diagram-muted)','#DDEBF4':'var(--diagram-blue-soft)','#315E78':'var(--diagram-blue-ink)'};
-  return Object.entries(map).reduce((out,[a,b])=>out.replaceAll(a,b),html);
+  return Object.entries(map).reduce((out,[a,b])=>out.replaceAll(a,b),html||'');
 }
 
 createRoot(document.getElementById('root')).render(<App/>);
