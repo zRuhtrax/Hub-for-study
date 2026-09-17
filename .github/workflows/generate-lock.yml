@@ -1,0 +1,34 @@
+name: Generate package-lock.json
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Gerar package-lock.json
+        run: npm install --package-lock-only
+
+      - name: Commitar o lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Nada para commitar — lock já existe e está atualizado."
+          else
+            git commit -m "chore: gera package-lock.json"
+            git push
+          fi
