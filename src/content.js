@@ -18,7 +18,7 @@ function topicMap(core,nodes,caption){
   return `<section class="diagram topic-map" aria-label="Síntese do módulo"><div class="topic-map-core">${core}</div><div class="topic-map-nodes">${nodes.map(n=>`<div class="topic-map-node"><b>${n[0]}</b><span>${n[1]}</span></div>`).join('')}</div><div class="diagram-cap">${caption}</div></section>`;
 }
 
-function svgClimateVsWeather(){return vizWrap('ESCALA DO TEMPO','Um episódio é um ponto; o clima é um padrão',`<svg class="visual-svg concept-graphic" viewBox="0 0 900 300" role="img" aria-label="Comparação entre um evento de tempo e uma série longa usada para descrever o clima"><line x1="72" y1="245" x2="410" y2="245" stroke="var(--diagram-line)"/><line x1="72" y1="70" x2="72" y2="245" stroke="var(--diagram-line)"/><text x="72" y="52" fill="var(--diagram-muted)" font-size="14">TEMPO</text><text x="72" y="269" fill="var(--diagram-muted)" font-size="12">agora</text><circle cx="150" cy="150" r="12" fill="var(--diagram-blue)"/><line x1="150" y1="150" x2="150" y2="107" stroke="var(--diagram-blue)" stroke-width="3"/><text x="178" y="155" fill="var(--diagram-ink)" font-size="16">chuva em uma tarde</text><line x1="480" y1="245" x2="835" y2="245" stroke="var(--diagram-line)"/><line x1="480" y1="70" x2="480" y2="245" stroke="var(--diagram-line)"/><text x="480" y="52" fill="var(--diagram-muted)" font-size="14">CLIMA</text><text x="480" y="269" fill="var(--diagram-muted)" font-size="12">muitos anos</text><path d="M500 183 C530 122 548 205 578 155 S630 176 657 120 S706 178 735 132 S782 166 812 104" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><line x1="500" y1="154" x2="812" y2="154" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><text x="690" y="178" fill="var(--diagram-muted)" font-size="12">média de referência</text></svg>`, 'Tempo descreve uma condição em escala curta; clima sintetiza padrões, variabilidade e extremos em séries longas.')}
+function svgClimateVsWeather(){return vizWrap('ESCALA DO TEMPO','Um episódio é um ponto; o clima é um padrão',`<svg class="visual-svg concept-graphic" viewBox="0 0 900 300" role="img" aria-label="Comparação entre um evento de tempo e uma série longa usada para descrever o clima"><line x1="72" y1="245" x2="410" y2="245" stroke="var(--diagram-line)"/><line x1="72" y1="70" x2="72" y2="245" stroke="var(--diagram-line)"/><text x="72" y="52" fill="var(--diagram-muted)" font-size="14">TEMPO</text><text x="72" y="269" fill="var(--diagram-muted)" font-size="12">agora</text><circle cx="150" cy="150" r="12" fill="var(--diagram-blue)"/><line x1="150" y1="150" x2="150" y2="107" stroke="var(--diagram-blue)" stroke-width="3"/><text x="178" y="155" fill="var(--diagram-ink)" font-size="16">chuva em uma tarde</text><line x1="480" y1="245" x2="835" y2="245" stroke="var(--diagram-line)"/><line x1="480" y1="70" x2="480" y2="245" stroke="var(--diagram-line)"/><text x="480" y="52" fill="var(--diagram-muted)" font-size="14">CLIMA</text><text x="480" y="269" fill="var(--diagram-muted)" font-size="12">muitos anos</text><path d="M500 183 C530 122 548 205 578 155 S630 176 657 120 S706 178 735 132 S782 166 812 104" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><line x1="500" y1="154" x2="812" y2="154" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><text x="690" y="218" fill="var(--diagram-muted)" font-size="12" font-weight="700">média de referência</text></svg>`, 'Tempo descreve uma condição em escala curta; clima sintetiza padrões, variabilidade e extremos em séries longas.')}
 
 function svgTemperatureAmplitude(){return vizWrap('VARIABILIDADE TÉRMICA','Duas cidades podem ter a mesma média e comportamentos diferentes',`<div class="paired-chart"><div class="chart-card"><div class="chart-card-head"><b>LITORAL</b><span>variação menor</span></div><svg viewBox="0 0 420 220" role="img" aria-label="Cidade litorânea com menor amplitude térmica"><line x1="50" y1="185" x2="390" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="40" x2="50" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="112" x2="390" y2="112" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><path d="M62 118 C90 108 112 113 140 120 S196 126 222 116 S282 104 310 115 S355 123 378 114" fill="none" stroke="var(--diagram-blue)" stroke-width="5"/></svg></div><div class="chart-card"><div class="chart-card-head"><b>INTERIOR</b><span>variação maior</span></div><svg viewBox="0 0 420 220" role="img" aria-label="Cidade no interior com maior amplitude térmica"><line x1="50" y1="185" x2="390" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="40" x2="50" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="112" x2="390" y2="112" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><path d="M62 67 C95 43 118 55 142 86 S188 167 220 92 S273 54 306 86 S354 167 378 70" fill="none" stroke="var(--diagram-amber)" stroke-width="5"/></svg></div></div>`, 'A média resume o centro da distribuição, mas a amplitude mostra quanto os valores oscilam. A maritimidade tende a amortecer essas oscilações.')}
 
@@ -80,9 +80,11 @@ function svgRadiationAndFactors(){return vizWrap('FATORES CLIMÁTICOS','O lugar 
       <path d="M60 50 L50 68 M60 50 L70 68" stroke="var(--diagram-amber)" stroke-width="3" fill="none"/>
       <path d="M60 160 L20 130 M60 160 L100 130" stroke="var(--diagram-amber)" stroke-width="3" fill="none" opacity="0.75"/>
       <path d="M240 50 V160" stroke="var(--diagram-amber)" stroke-width="4" fill="none"/>
-      <path d="M240 50 L230 68 M240 50 L250 68" stroke="var(--diagram-amber)" stroke-width="3" fill="none"/>
-      <rect x="10" y="170" width="100" height="34" rx="6" fill="var(--diagram-surface)" stroke="var(--diagram-line)" stroke-width="2"/>
-      <rect x="190" y="170" width="100" height="34" rx="6" fill="var(--diagram-ink)" opacity="0.85"/>
+      <path d="M240 160 L230 142 M240 160 L250 142" stroke="var(--diagram-amber)" stroke-width="3" fill="none"/>
+      <rect x="10" y="170" width="100" height="34" rx="6" fill="#eef3f7" stroke="var(--diagram-line)" stroke-width="2"/>
+      <rect x="190" y="170" width="100" height="34" rx="6" fill="#2b3138" stroke="var(--diagram-line)" stroke-width="2"/>
+      <text x="60" y="191" text-anchor="middle" fill="#263746" font-size="10" font-weight="800">REFLETE</text>
+      <text x="240" y="191" text-anchor="middle" fill="#f3f6f8" font-size="10" font-weight="800">ABSORVE</text>
     </svg>
     <div class="factor-v7-legend">
       <span><b>Clara</b>reflete mais radiação</span>
@@ -117,23 +119,23 @@ function svgCirculation(){return vizWrap('CIRCULAÇÃO GERAL','Três células co
   <text x="290" y="75" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="800">FERREL</text>
   <text x="470" y="75" text-anchor="middle" fill="var(--accent)" font-size="13" font-weight="800">FERREL</text>
   <text x="645" y="75" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="13" font-weight="800">POLAR</text>
-  <path d="M115 120 V260" stroke="var(--diagram-blue)" stroke-width="4" marker-end="url(#cDn)"/>
-  <text x="130" y="195" fill="var(--diagram-blue-ink)" font-size="12" font-weight="700">ar desce</text>
-  <path d="M290 260 V120" stroke="var(--accent)" stroke-width="4" marker-end="url(#cUp)"/>
-  <text x="305" y="195" fill="var(--accent)" font-size="12" font-weight="700">ar sobe</text>
-  <path d="M470 260 V120" stroke="var(--accent)" stroke-width="4" marker-end="url(#cUp)"/>
-  <text x="485" y="195" fill="var(--accent)" font-size="12" font-weight="700">ar sobe</text>
-  <path d="M645 120 V260" stroke="var(--diagram-blue)" stroke-width="4" marker-end="url(#cDn)"/>
-  <text x="660" y="195" fill="var(--diagram-blue-ink)" font-size="12" font-weight="700">ar desce</text>
+  <line x1="115" y1="120" x2="115" y2="244" stroke="var(--diagram-blue)" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="115,260 106,243 124,243" fill="var(--diagram-blue)"/>
+  <text x="140" y="195" fill="var(--diagram-blue-ink)" font-size="12" font-weight="700">ar desce</text>
+  <line x1="290" y1="260" x2="290" y2="136" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="290,120 281,137 299,137" fill="var(--accent)"/>
+  <text x="315" y="195" fill="var(--accent)" font-size="12" font-weight="700">ar sobe</text>
+  <line x1="470" y1="260" x2="470" y2="136" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="470,120 461,137 479,137" fill="var(--accent)"/>
+  <text x="495" y="195" fill="var(--accent)" font-size="12" font-weight="700">ar sobe</text>
+  <line x1="645" y1="120" x2="645" y2="244" stroke="var(--diagram-blue)" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="645,260 636,243 654,243" fill="var(--diagram-blue)"/>
+  <text x="670" y="195" fill="var(--diagram-blue-ink)" font-size="12" font-weight="700">ar desce</text>
   <text x="115" y="315" text-anchor="middle" fill="var(--diagram-muted)" font-size="11">60°–90°</text>
   <text x="290" y="315" text-anchor="middle" fill="var(--diagram-muted)" font-size="11">30°–60°</text>
   <text x="380" y="315" text-anchor="middle" fill="var(--diagram-ink)" font-size="12" font-weight="800">EQUADOR</text>
   <text x="470" y="315" text-anchor="middle" fill="var(--diagram-muted)" font-size="11">30°–60°</text>
   <text x="645" y="315" text-anchor="middle" fill="var(--diagram-muted)" font-size="11">60°–90°</text>
-  <defs>
-    <marker id="cUp" markerWidth="10" markerHeight="10" refX="5" refY="9" orient="auto"><path d="M0 9 L5 0 L10 9 Z" fill="var(--accent)"/></marker>
-    <marker id="cDn" markerWidth="10" markerHeight="10" refX="5" refY="1" orient="auto"><path d="M0 1 L5 10 L10 1 Z" fill="var(--diagram-blue)"/></marker>
-  </defs>
 </svg>`,`O desenho é simplificado: o objetivo é enxergar as três faixas de circulação e o movimento vertical do ar em cada uma. A célula de Hadley é a mais relevante para o Brasil.`)}
 
 function svgFronts(){return vizWrap('FRENTES','A diferença está em quem avança e em como o ar sobe',`<div class="paired-chart">
@@ -183,7 +185,7 @@ function svgENSO(){return vizWrap('ENSO','Um mesmo oceano, três configurações
   <text x="30" y="234" fill="var(--diagram-amber)" font-size="13" font-weight="800">EL NIÑO</text>
   <rect x="30" y="250" width="700" height="30" rx="15" fill="var(--diagram-blue-soft)"/>
   <rect x="270" y="250" width="460" height="30" rx="15" fill="var(--diagram-amber)"/>
-  <path d="M580 228 C490 238 380 238 290 230" fill="none" stroke="var(--diagram-blue)" stroke-width="2" opacity="0.5" marker-end="url(#ensoArrW)"/>
+  <path d="M580 228 C490 238 380 238 290 230" fill="none" stroke="var(--diagram-blue)" stroke-width="2" opacity="0.5" marker-end="url(#ensoArr)"/>
   <text x="500" y="270" text-anchor="middle" fill="var(--diagram-ink)" font-size="10" font-weight="800">água quente avança para leste</text>
   <text x="150" y="302" fill="var(--diagram-muted)" font-size="10">↑ ressurgência enfraquece</text>
   <text x="400" y="317" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="10">alísios enfraquecidos</text>
@@ -199,7 +201,6 @@ function svgENSO(){return vizWrap('ENSO','Um mesmo oceano, três configurações
 
   <defs>
     <marker id="ensoArr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="var(--diagram-blue)"/></marker>
-    <marker id="ensoArrW" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="var(--diagram-blue)" opacity="0.5"/></marker>
     <marker id="ensoArrS" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="var(--diagram-blue)"/></marker>
   </defs>
 </svg>`,`Compare sempre três coisas: posição da água quente · força dos alísios · intensidade da ressurgência.`)}

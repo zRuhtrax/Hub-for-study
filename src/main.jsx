@@ -12,9 +12,9 @@ const ICON_PATHS = {
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.4';
+const STORAGE = 'nexo:v6.2.5';
 const LEGACY_STORAGES = [
-  'nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
+  'nexo:v6.2.4','nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
   'nexo:v6.1.4','nexo:v6.1.3','nexo:v6.1.2','nexo:v6.1.1','nexo:v6.1.0',
   'nexo:v6.0.0','nexo:v6',
   'nexo:v5',
@@ -91,7 +91,7 @@ function App(){
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.2.4 · universal</div>
+        <div className="side-foot">v6.2.5 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
