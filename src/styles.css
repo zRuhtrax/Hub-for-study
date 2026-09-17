@@ -2277,3 +2277,75 @@ html body .app .study-content .diagram svg {
   html body .app .study-content .concept-grid,
   html body .app .study-content .compare-grid { grid-template-columns: 1fr !important; }
 }
+/* =========================================================
+   NEXO v6.2.7 — containers não estouram + cards adaptáveis
+   ========================================================= */
+
+/* Nenhum filho do conteúdo pode ser mais largo que o container */
+html body .app .study-content,
+html body .app .study-content.new-study-surface {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+html body .app .study-content * {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+html body .app .study-content .diagram,
+html body .app .study-content .visual-lesson,
+html body .app .study-content .visual-body {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Grids: usam min(x, 100%) para nunca estourar em telas estreitas */
+html body .app .study-content .concept-grid,
+html body .app .study-content .compare-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+html body .app .study-content .concept,
+html body .app .study-content .compare {
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 20px 24px !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+/* Padding uniforme pros cards que ficaram sem */
+html body .app .study-content .idea-box,
+html body .app .study-content .why-box,
+html body .app .study-content .connection-box,
+html body .app .study-content .warning-box {
+  padding: 20px 24px !important;
+}
+html body .app .study-content .cause-step {
+  padding: 20px 24px !important;
+  min-width: 0 !important;
+}
+
+/* SVGs nunca maiores que o pai */
+html body .app .study-content .diagram svg,
+html body .app .study-content .visual-svg {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Ilustrações pequenas continuam contidas mesmo em telas largas */
+html body .app .study-content .visual-body > svg {
+  max-width: 100% !important;
+}
+
+/* Mobile: 1 coluna sempre nos grids de 2+ */
+@media (max-width: 640px) {
+  html body .app .study-content .concept-grid,
+  html body .app .study-content .compare-grid,
+  html body .app .study-content .cause-chain {
+    grid-template-columns: 1fr !important;
+  }
+}
