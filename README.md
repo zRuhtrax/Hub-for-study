@@ -1,4 +1,4 @@
-# VÉSPERA v6.3.0
+# VÉSPERA v6.3.1
 
 **Tem prova. Dá tempo.**
 
@@ -27,4 +27,4 @@ A autenticação desta versão é local, no navegador. Não é autenticação de
 
 ## Estado atual
 
-A versão 6.3.0 expande Europa Medieval, amplia questões e flashcards, adiciona a central de Questões, organiza a Home por disciplina e matéria e adiciona mapas de síntese para as matérias ativas.
+A versão 6.3.1 expande Europa Medieval, amplia questões e flashcards, adiciona a central de Questões, organiza a Home por disciplina e matéria e adiciona mapas de síntese para as matérias ativas.
