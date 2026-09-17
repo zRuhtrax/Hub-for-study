@@ -1,4 +1,10 @@
 node_modules/
 dist/
-.DS_Store
+dist-ssr/
+*.local
 *.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.vite/
