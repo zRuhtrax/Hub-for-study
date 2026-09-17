@@ -20,15 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Baixar código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Instalar dependências
-        run: npm install
+        run: npm ci
+
+      - name: Auditoria de conteúdo e QA estrutural
+        run: npm run qa
 
       - name: Criar build
         run: npm run build
@@ -37,7 +41,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Enviar build
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
