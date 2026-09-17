@@ -2182,113 +2182,98 @@ body{overflow-y:auto!important;}
 .history-map-card:nth-child(2){grid-column:1;}.history-map-card:nth-child(3){grid-column:2;}.history-map-card:nth-child(4){grid-column:4;}.history-map-card:nth-child(5){grid-column:5;}.history-map-card:nth-child(6){grid-column:3;}
 @media(max-width:900px){.history-map-grid{grid-template-columns:1fr 1fr;grid-template-rows:auto;}.history-map-core{grid-column:1/-1;}.history-map-card:nth-child(n){grid-column:auto;}}
 @media(max-width:560px){.history-map-grid{grid-template-columns:1fr;padding:18px 14px;}.history-map-core{grid-column:1;}}
-
 /* =========================================================
-   NEXO v6.2.5 — correções de layout, sidebar fixa, SVGs
+   NEXO v6.2.6 — padding real nos cards + grids estáveis
+   Este bloco DEVE ficar no final absoluto do arquivo
    ========================================================= */
 
-/* SIDEBAR PRINCIPAL fixa ao rolar (desktop) */
-@media(min-width:901px){
-  .shell{display:block!important;min-height:100vh!important;}
-  .sidebar{
-    position:fixed!important;
-    top:0!important;left:0!important;bottom:0!important;
-    width:260px!important;height:100vh!important;
-    overflow-y:auto!important;overflow-x:hidden!important;
-    z-index:40!important;
-    padding:24px 16px!important;
-    box-sizing:border-box!important;
+/* ---- PADDING interno de TODOS os blocos retangulares ---- */
+html body .app .study-content .concept,
+html body .app .study-content .compare,
+html body .app .study-content .idea-box,
+html body .app .study-content .why-box,
+html body .app .study-content .connection-box,
+html body .app .study-content .warning-box,
+html body .app .study-content .cause-step,
+html body .app .study-content .module-question,
+html body .app .study-content .topic-map-node,
+html body .app .study-content .chart-card,
+html body .app .study-content .factor-v7 article {
+  padding: 22px 26px !important;
+  box-sizing: border-box !important;
+}
+
+html body .app .study-content .concept > *:first-child,
+html body .app .study-content .compare > *:first-child,
+html body .app .study-content .idea-box > *:first-child,
+html body .app .study-content .why-box > *:first-child,
+html body .app .study-content .connection-box > *:first-child,
+html body .app .study-content .warning-box > *:first-child,
+html body .app .study-content .cause-step > *:first-child,
+html body .app .study-content .topic-map-node > *:first-child,
+html body .app .study-content .chart-card > *:first-child {
+  margin-top: 0 !important;
+}
+html body .app .study-content .concept > *:last-child,
+html body .app .study-content .compare > *:last-child,
+html body .app .study-content .idea-box > *:last-child,
+html body .app .study-content .why-box > *:last-child,
+html body .app .study-content .connection-box > *:last-child,
+html body .app .study-content .warning-box > *:last-child,
+html body .app .study-content .cause-step > *:last-child,
+html body .app .study-content .topic-map-node > *:last-child,
+html body .app .study-content .chart-card > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* ---- GRIDS: não esticar, não cortar ---- */
+html body .app .study-content .concept-grid,
+html body .app .study-content .compare-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 12px !important;
+}
+html body .app .study-content .cause-chain {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+html body .app .study-content .cause-link { display: none !important; }
+html body .app .study-content .concept,
+html body .app .study-content .compare,
+html body .app .study-content .cause-step {
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* ---- SVGs: nunca estourar ---- */
+html body .app .study-content .diagram svg {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* ---- SIDEBAR principal fixa ---- */
+@media (min-width: 901px) {
+  html body .app .shell .sidebar {
+    position: fixed !important; top: 0 !important; left: 0 !important; bottom: 0 !important;
+    width: 260px !important; height: 100vh !important; max-height: 100vh !important;
+    overflow-x: hidden !important; overflow-y: auto !important; z-index: 40 !important;
+    box-sizing: border-box !important;
   }
-  .sidebar-collapsed .sidebar{width:74px!important;padding:24px 10px!important;}
-  .main{margin-left:260px!important;min-width:0!important;}
-  .sidebar-collapsed .main{margin-left:74px!important;}
-
-  /* SIDEBAR DE MÓDULOS fixa ao rolar */
-  .learn-layout .module-index{
-    position:sticky!important;
-    top:84px!important;
-    align-self:start!important;
-    max-height:calc(100vh - 104px)!important;
-    overflow-y:auto!important;
+  html body .app .shell .main { margin-left: 260px !important; min-width: 0 !important; }
+  html body .app.sidebar-collapsed .shell .sidebar { width: 74px !important; }
+  html body .app.sidebar-collapsed .shell .main { margin-left: 74px !important; }
+  html body .app .learn-layout .module-index {
+    position: sticky !important; top: 84px !important; align-self: start !important;
+    max-height: calc(100vh - 104px) !important; overflow-y: auto !important;
   }
 }
-
-/* GRID de conceitos e comparações — não cortar nem esticar */
-.study-content .concept-grid,
-.study-content .compare-grid{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:14px!important;
-}
-.study-content .concept,
-.study-content .compare{
-  min-height:0!important;
-  padding:22px 24px!important;
-  overflow-wrap:anywhere!important;
-  word-break:normal!important;
-}
-.study-content .concept .d,
-.study-content .compare .line{
-  overflow-wrap:anywhere!important;
-  hyphens:auto!important;
-}
-
-/* CAUSE-CHAIN 1-2-3 — três colunas iguais */
-.study-content .cause-chain{
-  display:grid!important;
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  gap:12px!important;
-}
-.study-content .cause-step{
-  min-width:0!important;
-  min-height:0!important;
-  padding:20px 22px!important;
-  overflow-wrap:anywhere!important;
-}
-
-/* SVGs — nunca estourar o container */
-.study-content .diagram svg,
-.study-content .diagram .visual-svg,
-.study-content .diagram .concept-graphic{
-  width:100%!important;
-  max-width:100%!important;
-  height:auto!important;
-  box-sizing:border-box!important;
-  display:block!important;
-}
-.study-content .gh-v7 svg,
-.study-content .cyclone-v7 svg{
-  max-width:460px!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
-}
-.study-content .paired-chart{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:16px!important;
-}
-.study-content .paired-chart > svg{min-width:0!important;width:100%!important;}
-
-/* Títulos numerados — sem colar o "01" no texto */
-.study-content.new-study-surface > h4{
-  display:flex!important;
-  align-items:baseline!important;
-  gap:14px!important;
-}
-.study-content.new-study-surface > h4::before{
-  min-width:22px!important;
-  flex:0 0 auto!important;
-}
-
-/* Frentes e ENSO mais legíveis */
-.front-v7 article{min-height:230px!important;}
-.front-v7 header{padding-bottom:8px!important;}
-.front-v7 svg{max-height:180px!important;}
-.enso-clear-row svg{min-height:120px!important;}
-
-/* MOBILE — sidebar volta ao fluxo normal */
-@media(max-width:900px){
-  .sidebar{position:static!important;height:auto!important;overflow:visible!important;width:100%!important;}
-  .main{margin-left:0!important;}
-  .learn-layout .module-index{position:static!important;max-height:none!important;overflow:visible!important;}
+@media (max-width: 900px) {
+  html body .app .shell .sidebar { position: static !important; height: auto !important; width: 100% !important; overflow: visible !important; }
+  html body .app .shell .main { margin-left: 0 !important; }
+  html body .app .study-content .cause-chain { grid-template-columns: 1fr !important; }
+  html body .app .study-content .concept-grid,
+  html body .app .study-content .compare-grid { grid-template-columns: 1fr !important; }
 }
