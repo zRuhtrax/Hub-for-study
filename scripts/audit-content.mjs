@@ -78,6 +78,6 @@ for (const id of registryIds) {
 }
 
 const visualCount = SUBJECTS.reduce((n,s)=>n+(s.topics ?? []).reduce((m,t)=>m+(t.html.match(/visual-lesson/g)?.length ?? 0),0),0);
-console.log(`Auditoria NEXO v6.2.4: ${DISCIPLINES.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) de prática, ${visualCount} bloco(s) visual(is).`);
+console.log(`Auditoria NEXO v6.2.5: ${DISCIPLINES.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) de prática, ${visualCount} bloco(s) visual(is).`);
 console.log(`Erros: ${errors} · Avisos: ${warnings}`);
 if (errors) process.exit(1);

@@ -24,5 +24,5 @@ for(const [name,re] of must){
 if(!/v6\.2\.4/.test(main+css)){console.error('[ERRO] QA: versão 6.2.4 ausente');errors++;}
 const badOutsideHtml=content.includes('</html>');
 if(badOutsideHtml){console.error('[ERRO] QA: content.js contém fechamento de HTML');errors++;}
-console.log(`QA estrutural NEXO v6.2.4: ${errors ? errors+' erro(s)' : 'OK'}`);
+console.log(`QA estrutural NEXO v6.2.5: ${errors ? errors+' erro(s)' : 'OK'}`);
 if(errors)process.exit(1);
