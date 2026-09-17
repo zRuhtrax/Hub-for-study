@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { SUBJECTS } from './content.js';
+import { SUBJECTS, DISCIPLINES } from './content.js';
 import './styles.css';
 
 const ICON_PATHS = {
@@ -12,7 +12,7 @@ const ICON_PATHS = {
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.2';
+const STORAGE = 'nexo:v6.2.3';
 const LEGACY_STORAGES = ['nexo:v6.2.0','nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -57,6 +57,7 @@ function App(){
   const openSettings = () => setPage({name:'settings',subjectId:null});
   const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
   const openCalendar = () => setPage({name:'calendar',subjectId:null});
+  useLayoutEffect(()=>{ if(typeof window!=='undefined'){ try{window.history.scrollRestoration='manual';}catch{} window.scrollTo({top:0,left:0,behavior:'auto'}); } },[page.name,page.subjectId,subjectTab]);
   const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
   const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
 
@@ -68,7 +69,7 @@ function App(){
     <div className="shell">
       <aside className="sidebar">
         <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
-        <button className={`sidebar-toggle ${sidebarCollapsed?'is-collapsed':''}`} onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
+        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon={<Icon name="home"/>} label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon={<Icon name="disciplines"/>} label="Disciplinas" onClick={openDisciplines}/>
@@ -76,7 +77,7 @@ function App(){
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.2.2 · universal</div>
+        <div className="side-foot">v6.2.3 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -121,10 +122,11 @@ function Home({subjects,onOpen,srs}){
       <div className="today-panel-main"><span className="eyebrow">HOJE</span><div className="today-number">{due}</div><div><h3>{due===1?'item para revisar':due>1?'itens para revisar':'tudo em dia'}</h3><p>{due?'Comece pelo que já está pronto para recuperação. A fila se reorganiza conforme seu desempenho.':'Não há itens vencidos. Você pode seguir para o conteúdo novo ou praticar.'}</p></div></div>
       <div className="today-panel-side"><span>RECUPERAÇÃO</span><strong>{due ? 'Prioridade ativa' : 'Sem pendências'}</strong><small>O sistema ordena seus itens pelo histórico recente.</small></div>
     </section>
-    <section className="metric-overview">
-      <OverviewMetric value={subjects.length} label="disciplinas" />
-      <OverviewMetric value={totals.topics} label="módulos" />
+    <section className="metric-overview metric-overview-4">
+      <OverviewMetric value={DISCIPLINES.length} label="disciplinas" />
+      <OverviewMetric value={subjects.length} label="matérias ativas" />
       <OverviewMetric value={totals.questions} label="questões" />
+      <OverviewMetric value={due} label="revisões hoje"/>
     </section>
     <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{subjects.length} {subjects.length===1?'disciplina':'disciplinas'}</span></section>
     <div className={`subjects-grid count-${subjects.length} ${subjects.length%2?'odd':''}`}>
@@ -136,16 +138,19 @@ function OverviewMetric({value,label}){return <div className="overview-metric"><
 
 function Disciplines({subjects,onOpen}){
   const [query,setQuery]=useState('');
+  const [open,setOpen]=useState(()=>new Set(['geografia','historia']));
   const q=query.trim().toLowerCase();
-  const filtered=subjects.filter(s=>!q || `${s.name} ${s.tag} ${s.topics.map(t=>t.title).join(' ')}`.toLowerCase().includes(q));
+  const groups=DISCIPLINES.map(d=>{const matters=subjects.filter(s=>(d.subjectIds||[]).includes(s.id));const match=!q||`${d.name} ${d.description} ${matters.map(s=>`${s.name} ${s.learningGoal} ${s.topics.map(t=>t.title).join(' ')}`).join(' ')}`.toLowerCase().includes(q);return {...d,matters,match};}).filter(d=>d.match);
+  const toggle=id=>setOpen(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
   return <div className="page disciplines-page">
-    <div className="disciplines-intro"><div><span className="eyebrow">MAPA DE ESTUDOS</span><h1 className="page-h1">Disciplinas</h1><p className="page-lead">Cada disciplina reúne seus módulos. Pesquise pelo nome da disciplina ou por um módulo para encontrar onde estudar.</p></div></div>
-    <label className="discipline-search"><span>Pesquisar</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: climatologia, atmosfera..." /></label>
-    <div className="discipline-list">{filtered.map(subject=><button className="discipline-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">{subject.tag.split(' · ')[0]}</span><h3>{subject.name}</h3><p>{subject.learningGoal}</p></div><div className="discipline-meta"><span>{subject.topics.length} módulos</span><span>{subject.questions.length} questões</span><b>↗</b></div></button>)}</div>
-    {!filtered.length && <div className="empty-state"><strong>Nenhuma disciplina encontrada.</strong><span>Tente outro nome ou procure por um módulo.</span></div>}
+    <div className="disciplines-intro"><div><span className="eyebrow">MAPA DE ESTUDOS</span><h1 className="page-h1">Disciplinas</h1><p className="page-lead">Uma disciplina reúne matérias. A matéria organiza os capítulos e módulos que formam seu conteúdo de estudo.</p></div></div>
+    <label className="discipline-search"><span>Pesquisar</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: História, Europa Medieval, clima..." /></label>
+    <div className="discipline-groups">{groups.map(d=><section className={`discipline-group ${open.has(d.id)?'is-open':''}`} key={d.id}>
+      <button className="discipline-group-head" onClick={()=>toggle(d.id)} aria-expanded={open.has(d.id)}><div><span className="tile-tag">DISCIPLINA</span><h3>{d.name}</h3><p>{d.description}</p></div><span className="discipline-chevron">{open.has(d.id)?'−':'+'}</span></button>
+      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{subject.topics.length} módulos</span><span>{subject.questions.length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
+    </section>)}</div>
   </div>
 }
-
 function SubjectTile({subject,onClick,srs}){
   const completed = subject.topics.filter(t=>Object.values(srs?.[subject.id]?.keywords||{}).length).length;
   return <button className="subject-tile" onClick={onClick}>
@@ -208,7 +213,7 @@ function Choice({active,onClick,icon,title,desc}){return <button className={`cho
 
 function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rateFlashcard,openTerms,setOpenTerms}){
   return <div className="page subject-page">
-    <div className="subject-head"><div><span className="eyebrow">{subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.filter(t=>!t.summary).length}</strong><span>módulos</span></div></div>
+    <div className="subject-head"><div><span className="eyebrow">{subject.discipline || subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.length}</strong><span>módulos</span></div></div>
     <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
     {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
     {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
@@ -218,12 +223,10 @@ function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQue
 
 function Learn({subject,topicIdx,setTopicIdx}){
   const topic=subject.topics[topicIdx];
-  const coreTopics=subject.topics.filter(t=>!t.summary);
-  const coreIndex=Math.max(0,coreTopics.findIndex(t=>t.id===topic?.id));
-  const isSummary=Boolean(topic?.summary);
   const firstRender=useRef(true);
   const [quizAnswers,setQuizAnswers]=useState({});
   const [modulesCollapsed,setModulesCollapsed]=useState(false);
+  useEffect(()=>{ const root=document.querySelector('.subject-summary'); if(!root) return; const nodes=root.querySelectorAll('.mind-node[data-topic]'); const handler=e=>{const node=e.currentTarget;const i=Number(node.dataset.topic); if(Number.isFinite(i) && i<subject.topics.length) setTopicIdx(i);}; nodes.forEach(n=>{n.addEventListener('click',handler);n.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();handler({currentTarget:n});}})}); return()=>nodes.forEach(n=>{n.removeEventListener('click',handler);}); },[topicIdx,subject]);
   useEffect(()=>{setQuizAnswers({});},[topicIdx]);
   useEffect(()=>{
     if(firstRender.current){ firstRender.current=false; return; }
@@ -235,26 +238,26 @@ function Learn({subject,topicIdx,setTopicIdx}){
     });
   },[topicIdx]);
   const miniQuiz=(topic.quiz||[]).slice(0,4);
-  const progress=isSummary?100:((coreIndex+1)/coreTopics.length)*100;
+  const progress=((topicIdx+1)/subject.topics.length)*100;
   return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
     <aside className="module-index" aria-label="Módulos">
       <div className="module-index-head">
-        <div><div className="module-index-title">Módulos</div><span>{isSummary?'síntese':`${coreIndex+1} de ${coreTopics.length}`}</span></div>
+        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {subject.topics.length}</span></div>
         <button className="module-collapse-btn icon-only" onClick={()=>setModulesCollapsed(v=>!v)} aria-label={modulesCollapsed?'Mostrar nomes dos módulos':'Ocultar nomes dos módulos'} title={modulesCollapsed?'Expandir módulos':'Recolher módulos'}><span>{modulesCollapsed?'›':'‹'}</span></button>
       </div>
       <div className="module-index-progress"><i style={{width:`${progress}%`}}/></div>
       <div className="module-index-list">
-        {subject.topics.map((t,i)=>{const num=t.summary?'MAPA':String(coreTopics.findIndex(x=>x.id===t.id)+1).padStart(2,'0'); return <button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={t.summary?'Mapa mental':`Módulo ${num}: ${t.title}`}><span>{num}</span><em>{t.title}</em></button>})}
+        {subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
       </div>
     </aside>
     <div className="mobile-module-picker">
       <label htmlFor="module-picker">Módulo atual</label>
       <select id="module-picker" value={topicIdx} onChange={e=>setTopicIdx(Number(e.target.value))}>
-        {subject.topics.map((t,i)=>{const num=t.summary?'MAPA':String(coreTopics.findIndex(x=>x.id===t.id)+1).padStart(2,'0'); return <option key={t.id} value={i}>{num} · {t.title}</option>})}
+        {subject.topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
       </select>
     </div>
     <div className="study-pane">
-      <div className="study-kicker-row"><div className="module-meta"><span>{isSummary?'SÍNTESE · MAPA MENTAL':`MÓDULO ${String(coreIndex+1).padStart(2,'0')} / ${coreTopics.length}`}</span><span>APRENDER</span></div><span className="study-progress-label">{isSummary?'SÍNTESE':`${Math.round(progress)}%`}</span></div>
+      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
       <div className="study-intro">
         <span className="study-intro-label">IDEIA-GUIA</span>
         <h2>{topic.title}</h2>
@@ -262,7 +265,7 @@ function Learn({subject,topicIdx,setTopicIdx}){
       </div>
       <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html)}} />
       {miniQuiz.length>0 && <section className="module-check redesigned-check"><div className="module-check-head"><div><span className="eyebrow">RECUPERAÇÃO ATIVA</span><h3>Antes de seguir</h3><p>Recupere a ideia principal sem voltar ao texto. O objetivo é testar o entendimento, não reconhecer a frase.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
-      <div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
+      <>{topicIdx===subject.topics.length-1 && subject.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(subject.summaryHtml)}} />}</><div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
     </div>
   </div>
 }
