@@ -10,11 +10,17 @@ const must=[
   ["scroll reset", /window\.scrollTo\(\{top:0/],
   ["sidebar x overflow", /overflow-x:hidden!important/],
   ["discipline registry", /const DISCIPLINES\s*=\s*\[/],
-  ["summary mind map", /summaryHtml:\s*svgClimateMindMap/],
+  ["topic map helper", /function topicMap\(/],
+  ["topic summary per module", /summaryHtml:topicMap\('/],
   ["global flashcards", /function FlashcardsHub/],
   ["calendar", /function Calendar/]
 ];
-for(const [name,re] of must){if(!re.test(main+css+content)){console.error(`[ERRO] QA: ${name} ausente`);errors++;}}
+for(const [name,re] of must){
+  if(!re.test(main+css+content)){
+    console.error(`[ERRO] QA: ${name} ausente`);
+    errors++;
+  }
+}
 if(!/v6\.2\.4/.test(main+css)){console.error('[ERRO] QA: versão 6.2.4 ausente');errors++;}
 const badOutsideHtml=content.includes('</html>');
 if(badOutsideHtml){console.error('[ERRO] QA: content.js contém fechamento de HTML');errors++;}
