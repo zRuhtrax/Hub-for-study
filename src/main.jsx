@@ -9,12 +9,13 @@ const ICON_PATHS = {
   flashcards: <><rect x="3.5" y="7" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M7 4h11a2 2 0 0 1 2 2v9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
   calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><circle cx="8" cy="13.5" r="1.15" fill="currentColor"/><circle cx="12" cy="13.5" r="1.15" fill="currentColor"/></>,
   settings: <><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
+  questions: <><path d="M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 0 0 0-17Z" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M9.5 9.2a2.65 2.65 0 1 1 4.45 1.93c-1 .72-1.95 1.15-1.95 2.55M12 17.35h.01" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.5';
+const STORAGE = 'vespera:v6.3.0';
 const LEGACY_STORAGES = [
-  'nexo:v6.2.4','nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
+  'nexo:v6.2.5','nexo:v6.2.4','nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
   'nexo:v6.1.4','nexo:v6.1.3','nexo:v6.1.2','nexo:v6.1.1','nexo:v6.1.0',
   'nexo:v6.0.0','nexo:v6',
   'nexo:v5',
@@ -71,6 +72,7 @@ function App(){
   const openSubject = (id) => { setPage({name:'subject',subjectId:id}); setSubjectTab('learn'); setTopicIdx(0); setQuestionIdx(0); setAnswers({}); };
   const openSettings = () => setPage({name:'settings',subjectId:null});
   const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
+  const openQuestions = () => setPage({name:'questions',subjectId:null});
   const openCalendar = () => setPage({name:'calendar',subjectId:null});
   const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
   const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
@@ -82,20 +84,21 @@ function App(){
   return <div className={`app theme-${theme} mode-${uiMode} ${sidebarCollapsed?'sidebar-collapsed':''}`}>
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
+        <div className="brand" onClick={goHome} aria-label="VÉSPERA"><div className="brand-lockup"><span className="brand-n">V</span><span className="brand-exo">ÉSPERA</span></div><div className="brand-sub">tem prova. dá tempo.</div></div>
         <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon={<Icon name="home"/>} label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon={<Icon name="disciplines"/>} label="Disciplinas" onClick={openDisciplines}/>
           <NavButton active={page.name==='flashcards'} icon={<Icon name="flashcards"/>} label="Flashcards" onClick={openFlashcards}/>
+          <NavButton active={page.name==='questions'} icon={<Icon name="questions"/>} label="Questões" onClick={openQuestions}/>
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.2.5 · universal</div>
+        <div className="side-foot">v6.3.0 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
-          <div className="topbar-mobile-brand"><span className="brand-word"><b>N</b><span>EXO</span></span></div>
+          <div className="topbar-mobile-brand"><span className="brand-word"><b>V</b><span>ÉSPERA</span></span></div>
           <div className="topbar-actions">
             {page.name==='subject' && <button className="ghost-btn" onClick={goHome}>← Início</button>}
             <button className="icon-btn" onClick={openSettings} title="Configurações">⚙</button>
@@ -105,11 +108,12 @@ function App(){
           {page.name==='home' && <Home subjects={SUBJECTS} onOpen={openSubject} srs={srs}/>} 
           {page.name==='disciplines' && <Disciplines subjects={SUBJECTS} onOpen={openSubject}/>} 
           {page.name==='flashcards' && <FlashcardsHub subjects={SUBJECTS} srs={srs} rateFlashcard={rateFlashcard}/>}
+          {page.name==='questions' && <QuestionsHub subjects={SUBJECTS} onOpenSubject={openSubject}/>}
           {page.name==='calendar' && <Calendar subjects={SUBJECTS} events={calendarEvents} setEvents={setCalendarEvents}/>} 
           {page.name==='settings' && <Settings uiMode={uiMode} setUiMode={setUiMode} theme={theme} setTheme={setTheme}/>} 
           {page.name==='subject' && subject && <SubjectView subject={subject} tab={subjectTab} setTab={setSubjectTab} topicIdx={topicIdx} setTopicIdx={setTopicIdx} questionIdx={questionIdx} setQuestionIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
         </div>
-        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onCalendar={openCalendar} onSettings={openSettings}/>
+        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onQuestions={openQuestions} onCalendar={openCalendar} onSettings={openSettings}/>
       </main>
     </div>
   </div>
@@ -119,46 +123,39 @@ async function hashPassword(v){const data=new TextEncoder().encode(v);const hash
 function Auth({mode,setMode,onLogin}){
   const [name,setName]=useState(''); const [username,setUsername]=useState(''); const [password,setPassword]=useState(''); const [confirm,setConfirm]=useState(''); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
   const submit=async e=>{e.preventDefault();setError('');if(!username.trim()||!password){setError('Preencha usuário e senha.');return}const clean=username.trim().toLowerCase();if(!/^[a-z0-9_.-]{3,24}$/.test(clean)){setError('O usuário precisa ter 3–24 caracteres e usar letras, números, ponto, hífen ou _.');return}setBusy(true);try{const users=load('users',{});const pass=await hashPassword(password);if(mode==='register'){if(!name.trim()){setError('Informe seu nome.');return}if(users[clean]){setError('Esse usuário já existe.');return}if(password!==confirm){setError('As senhas não coincidem.');return}users[clean]={name:name.trim(),username:clean,passwordHash:pass,createdAt:Date.now()};save('users',users);}else{if(!users[clean]||users[clean].passwordHash!==pass){setError('Usuário ou senha inválidos.');return}}const user=users[clean]||{};save('session',{name:user.name||clean,username:clean});onLogin({name:user.name||clean,username:clean});}finally{setBusy(false)}};
-  return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">N</span><div><strong>NEXO</strong><small>estudo por conexões</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
+  return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">V</span><div><strong>VÉSPERA</strong><small>tem prova. dá tempo.</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
 }
-function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><Icon name="home" size={20}/>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><Icon name="disciplines" size={20}/>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><Icon name="flashcards" size={20}/>Cards</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><Icon name="calendar" size={20}/>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><Icon name="settings" size={20}/>Config.</button></nav>}
+function MobileNav({page,onHome,onDisciplines,onFlashcards,onQuestions,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><Icon name="home" size={20}/>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><Icon name="disciplines" size={20}/>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><Icon name="flashcards" size={20}/>Cards</button><button className={page.name==='questions'?'active':''} onClick={onQuestions}><Icon name="questions" size={20}/>Questões</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><Icon name="calendar" size={20}/>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><Icon name="settings" size={20}/>Config.</button></nav>}
 
 function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
 
 function Home({subjects,onOpen,srs}){
   const safeSubjects = safeArray(subjects);
-  const totals = useMemo(()=>safeSubjects.reduce((a,s)=>{
-    const topics = safeArray(s?.topics);
-    const questions = safeArray(s?.questions);
-    const flashcards = safeArray(s?.flashcards);
-    const keywords = safeArray(s?.keywords);
-    a.topics += topics.length;
-    a.questions += questions.length;
-    a.cards += flashcards.length + keywords.length;
-    return a;
-  },{topics:0,questions:0,cards:0}),[safeSubjects]);
-  const due = safeSubjects.reduce((n,s)=>{
-    const flashcards = safeArray(s?.flashcards);
-    const keywords = safeArray(s?.keywords);
-    return n + flashcards.filter(f=>isDue(s.id,'flashcards',f.id,srs)).length + keywords.filter(k=>isDue(s.id,'keywords',k.id,srs)).length;
-  },0);
+  const [openGroups,setOpenGroups]=useState(()=>new Set(['geografia','historia']));
+  const totals = useMemo(()=>safeSubjects.reduce((a,s)=>{a.topics+=safeArray(s?.topics).length;a.questions+=getPracticeQuestions(s).length;a.cards+=safeArray(s?.flashcards).length+safeArray(s?.keywords).length;return a;},{topics:0,questions:0,cards:0}),[safeSubjects]);
+  const due = safeSubjects.reduce((n,s)=>n+safeArray(s?.flashcards).filter(f=>isDue(s.id,'flashcards',f.id,srs)).length+safeArray(s?.keywords).filter(k=>isDue(s.id,'keywords',k.id,srs)).length,0);
+  const groups=safeArray(DISCIPLINES).map(d=>({...d,matters:safeSubjects.filter(s=>safeArray(d.subjectIds).includes(s.id))})).filter(d=>d.matters.length);
+  const toggle=(id)=>setOpenGroups(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n});
   return <div className="page home-page">
     <section className="hero-grid home-hero-clean">
-      <div><div className="eyebrow">NEXO</div><h1>Entender primeiro.<br/><em>Conectar depois.</em></h1><p>Um espaço para estudar por mecanismos, relações e recuperação ativa, sem transformar aprendizado em uma coleção de números.</p></div>
+      <div><div className="eyebrow">VÉSPERA</div><h1>Tem prova.<br/><em>Dá tempo.</em></h1><p>Concentre o estudo no que precisa ser lembrado: conteúdo organizado, questões de recuperação e revisão guiada pelo seu desempenho.</p></div>
     </section>
     <section className="today-panel">
-      <div className="today-panel-main"><span className="eyebrow">HOJE</span><div className="today-number">{due}</div><div><h3>{due===1?'item para revisar':due>1?'itens para revisar':'tudo em dia'}</h3><p>{due?'Comece pelo que já está pronto para recuperação. A fila se reorganiza conforme seu desempenho.':'Não há itens vencidos. Você pode seguir para o conteúdo novo ou praticar.'}</p></div></div>
-      <div className="today-panel-side"><span>RECUPERAÇÃO</span><strong>{due ? 'Prioridade ativa' : 'Sem pendências'}</strong><small>O sistema ordena seus itens pelo histórico recente.</small></div>
+      <div className="today-panel-main"><span className="eyebrow">HOJE</span><div className="today-number">{due}</div><div><h3>{due===1?'item para revisar':due>1?'itens para revisar':'tudo em dia'}</h3><p>{due?'Comece pelo que já pede recuperação. A fila se reorganiza conforme suas respostas.':'Não há itens vencidos. Você pode seguir para conteúdo novo ou praticar.'}</p></div></div>
+      <div className="today-panel-side"><span>RECUPERAÇÃO</span><strong>{due ? 'Prioridade ativa' : 'Sem pendências'}</strong><small>O sistema usa histórico e desempenho para ordenar a revisão.</small></div>
     </section>
     <section className="metric-overview metric-overview-4">
-      <OverviewMetric value={safeArray(DISCIPLINES).length} label="disciplinas" />
+      <OverviewMetric value={groups.length} label="disciplinas com conteúdo" />
       <OverviewMetric value={safeSubjects.length} label="matérias ativas" />
       <OverviewMetric value={totals.questions} label="questões" />
       <OverviewMetric value={due} label="revisões hoje"/>
     </section>
-    <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{safeSubjects.length} {safeSubjects.length===1?'disciplina':'disciplinas'}</span></section>
-    <div className={`subjects-grid count-${safeSubjects.length} ${safeSubjects.length%2?'odd':''}`}>
-      {safeSubjects.map(s=><SubjectTile key={s.id} subject={s} onClick={()=>onOpen(s.id)} srs={srs}/>)}
+    <section className="section-head home-section-head"><div><span className="eyebrow">ORGANIZAÇÃO</span><h2>Seus estudos</h2></div><span className="section-count">recolha uma disciplina quando quiser</span></section>
+    <div className="home-discipline-groups">
+      {groups.map(d=><section className={`home-discipline-group ${openGroups.has(d.id)?'is-open':''}`} key={d.id}>
+        <button className="home-discipline-head" onClick={()=>toggle(d.id)} aria-expanded={openGroups.has(d.id)}><div><span>{String(d.matters.length).padStart(2,'0')}</span><div><b>{d.name}</b><small>{d.description}</small></div></div><span className="home-discipline-toggle">{openGroups.has(d.id)?'−':'+'}</span></button>
+        {openGroups.has(d.id)&&<div className="home-matter-list">{d.matters.map(subject=><SubjectTile key={subject.id} subject={subject} onClick={()=>onOpen(subject.id)} srs={srs}/>)}</div>}
+      </section>)}
     </div>
   </div>
 }
@@ -175,19 +172,51 @@ function Disciplines({subjects,onOpen}){
     <label className="discipline-search"><span>Pesquisar</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: História, Europa Medieval, clima..." /></label>
     <div className="discipline-groups">{groups.map(d=><section className={`discipline-group ${open.has(d.id)?'is-open':''}`} key={d.id}>
       <button className="discipline-group-head" onClick={()=>toggle(d.id)} aria-expanded={open.has(d.id)}><div><span className="tile-tag">DISCIPLINA</span><h3>{d.name}</h3><p>{d.description}</p></div><span className="discipline-chevron">{open.has(d.id)?'−':'+'}</span></button>
-      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{safeArray(subject.topics).length} módulos</span><span>{safeArray(subject.questions).length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
+      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{safeArray(subject.topics).length} módulos</span><span>{getPracticeQuestions(subject).length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
     </section>)}</div>
   </div>
 }
 function SubjectTile({subject,onClick,srs}){
   const topics = safeArray(subject?.topics);
-  const questions = safeArray(subject?.questions);
+  const questions = getPracticeQuestions(subject);
   return <button className="subject-tile" onClick={onClick}>
     <div className="tile-top"><span className="tile-tag">{subject.tag}</span><span className="tile-arrow">↗</span></div>
     <div className="tile-title">{subject.name}</div>
     <p>{subject.learningGoal}</p>
     <div className="tile-meta"><span>{topics.length} módulos</span><span>{questions.length} questões</span></div>
   </button>
+}
+
+function getPracticeQuestions(subject){
+  const direct=safeArray(subject?.questions);
+  const fromTopics=safeArray(subject?.topics).flatMap(t=>safeArray(t.quiz));
+  const seen=new Set();
+  return [...direct,...fromTopics].filter(q=>{const key=q?.q||JSON.stringify(q);if(seen.has(key)) return false;seen.add(key);return true;});
+}
+
+function QuestionsHub({subjects,onOpenSubject}){
+  const [query,setQuery]=useState('');
+  const [subjectFilter,setSubjectFilter]=useState('all');
+  const [onlyChallenges,setOnlyChallenges]=useState(false);
+  const [answers,setAnswers]=useState({});
+  const pool=useMemo(()=>safeArray(subjects).flatMap(subject=>getPracticeQuestions(subject).map((q,index)=>({subject,q,index,key:`${subject.id}:${index}`}))),[subjects]);
+  const filtered=useMemo(()=>{
+    const q=query.trim().toLowerCase();
+    return pool.filter(item=>{
+      const text=[item.subject.name,item.q.q,item.q.model,safeArray(item.q.terms).join(' ')].join(' ').toLowerCase();
+      return (subjectFilter==='all'||item.subject.id===subjectFilter)&&(!onlyChallenges||!!item.q.challenge)&&(!q||text.includes(q));
+    });
+  },[pool,query,subjectFilter,onlyChallenges]);
+  const shown=filtered.slice(0,12);
+  return <div className="page questions-page">
+    <div className="page-head-row"><div><span className="eyebrow">TREINO</span><h1 className="page-h1">Questões</h1><p className="page-lead">Uma fila única para testar o que você realmente sabe, por matéria ou misturando assuntos.</p></div><div className="hub-count"><b>{filtered.length}</b><span>questões disponíveis</span></div></div>
+    <div className="questions-controls"><label>Pesquisar<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tema, conceito ou enunciado..." /></label><label>Matéria<select value={subjectFilter} onChange={e=>setSubjectFilter(e.target.value)}><option value="all">Todas</option>{safeArray(subjects).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label className="question-toggle"><span>Desafio</span><button type="button" className={onlyChallenges?'is-on':''} onClick={()=>setOnlyChallenges(v=>!v)}>{onlyChallenges?'Só desafios':'Todas'}</button></label></div>
+    <div className="question-hub-list">{shown.map(item=>{
+      const ans=answers[item.key];
+      return <article className="question-hub-item" key={item.key}><div className="question-hub-meta"><span>{item.subject.name}</span><span>{item.q.challenge?'DESAFIO':'PRÁTICA'} · {item.q.type==='open'?'ABERTA':'MÚLTIPLA ESCOLHA'}</span></div><h3>{item.q.q}</h3>{item.q.type==='open'?<OpenQuestion q={item.q} answered={ans} onAnswer={v=>setAnswers(prev=>({...prev,[item.key]:{value:v,show:prev[item.key]?.show||false}}))}/>:<MCQuestion q={item.q} answered={ans} onAnswer={v=>setAnswers(prev=>({...prev,[item.key]:v}))}/>}<button className="question-matter-link" onClick={()=>onOpenSubject(item.subject.id)}>Abrir {item.subject.name}</button></article>
+    })}{!shown.length&&<div className="empty-state"><strong>Nenhuma questão encontrada.</strong><span>Experimente remover filtros ou pesquisar outro conceito.</span></div>}</div>
+    {filtered.length>12&&<div className="questions-hub-more"><span>Mostrando 12 de {filtered.length}</span><button className="secondary-btn" onClick={()=>setOnlyChallenges(false)}>Limpe o filtro para ampliar a fila</button></div>}
+  </div>
 }
 
 function isoDay(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
@@ -212,16 +241,16 @@ function Calendar({subjects,events,setEvents}){
   const openNew=(date=selected)=>{setSelected(date);setForm({title:'',date,start:'',duration:'60',type:'estudo',subjectId:safeSubjects[0]?.id||'',topicId:safeSubjects[0]?.topics?.[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});setShowForm(true);};
   const saveEvent=(e)=>{e.preventDefault(); if(!form.title.trim()||!form.date)return; const base=Date.now(); const dates=form.repeatWeekly?Array.from({length:8},(_,i)=>{const d=parseDay(form.date);d.setDate(d.getDate()+i*7);return isoDay(d)}):[form.date]; const created=dates.map((date,i)=>({...form,id:`ev-${base}-${i}`,date,title:form.title.trim(),createdAt:base+i,repeatWeekly:!!form.repeatWeekly})); setEvents(prev=>[...prev,...created]); setSelected(form.date); setShowForm(false);};
   const removeEvent=(id)=>setEvents(prev=>prev.filter(e=>e.id!==id));
-  const enableNotifications=async()=>{ if(!('Notification' in window)){setNotifications('unsupported');return;} const p=await Notification.requestPermission(); setNotifications(p); if(p==='granted') new Notification('NEXO · lembretes ativos',{body:'Os lembretes serão verificados enquanto o NEXO estiver aberto.'}); };
-  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); safeEvents.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`NEXO · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[safeEvents,safeSubjects]);
+  const enableNotifications=async()=>{ if(!('Notification' in window)){setNotifications('unsupported');return;} const p=await Notification.requestPermission(); setNotifications(p); if(p==='granted') new Notification('VÉSPERA · lembretes ativos',{body:'Os lembretes serão verificados enquanto o VÉSPERA estiver aberto.'}); };
+  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); safeEvents.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`VÉSPERA · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[safeEvents,safeSubjects]);
   return <div className="page calendar-page">
     <div className="page-head-row calendar-head"><div><span className="eyebrow">PLANEJAMENTO</span><h1 className="page-h1">Calendário</h1><p className="page-lead">Organize provas, módulos, questões, revisões e blocos de estudo em um único lugar.</p></div><div className="calendar-head-actions"><button className="primary-btn" onClick={()=>openNew(selected)}>+ Nova tarefa</button><button className={`secondary-btn ${notifications==='granted'?'is-active':''}`} onClick={enableNotifications}>{notifications==='granted'?'Lembretes ativos':'Ativar lembretes'}</button></div></div>
     <section className="calendar-layout">
       <div className="calendar-main"><div className="calendar-toolbar"><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()-1,1,12))}>‹</button><strong>{monthLabel(cursor)}</strong><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()+1,1,12))}>›</button><button className="today-link" onClick={()=>{setCursor(new Date(now.getFullYear(),now.getMonth(),1,12));setSelected(isoDay(now));}}>Hoje</button></div><div className="calendar-weekdays">{['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=><span key={x}>{x}</span>)}</div><div className="calendar-grid">{cells.map((d,i)=>{const key=d?isoDay(d):`empty-${i}`; const evs=d?dayEvents(d):[]; const isSel=d&&isoDay(d)===selected; const isToday=d&&isoDay(d)===isoDay(now); return <button key={key} className={`calendar-day ${!d?'empty':''} ${isSel?'selected':''} ${isToday?'today':''}`} onClick={()=>d&&setSelected(isoDay(d))} disabled={!d}><span className="day-number">{d?d.getDate():''}</span>{d&&evs.slice(0,3).map(ev=><span key={ev.id} className={`day-event type-${ev.type}`}>{ev.start&&<b>{ev.start}</b>} {ev.title}</span>)}{d&&evs.length>3&&<small>+{evs.length-3}</small>}</button>})}</div></div>
       <aside className="calendar-side"><div className="calendar-side-head"><div><span className="eyebrow">AGENDA DO DIA</span><h3>{parseDay(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button className="icon-btn" onClick={()=>openNew(selected)}>+</button></div>{selectedEvents.length?<div className="agenda-list">{selectedEvents.map(ev=><article className="agenda-item" key={ev.id}><div className={`agenda-dot type-${ev.type}`}></div><div className="agenda-copy"><strong>{ev.title}</strong><span>{ev.start||'Sem horário'} · {ev.duration||60} min</span>{ev.subjectId&&<small>{safeSubjects.find(s=>s.id===ev.subjectId)?.name}{ev.topicId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.topics?.find(t=>t.id===ev.topicId)?.title||''):''}</small>}{ev.notes&&<small>{ev.notes}</small>}</div><button className="icon-btn subtle" onClick={()=>removeEvent(ev.id)} aria-label="Excluir tarefa">×</button></article>)}</div>:<div className="calendar-empty"><strong>Sem tarefas neste dia.</strong><span>Use o calendário para reservar tempo para conteúdo, questões, revisão ou prova.</span><button className="secondary-btn" onClick={()=>openNew(selected)}>Adicionar tarefa</button></div>}</aside>
     </section>
-    <section className="calendar-routines"><div><span className="eyebrow">ESTRUTURA DE ESTUDO</span><h3>O calendário conecta intenção e execução</h3><p>Registre o que vai estudar e a tarefa deixa de ser uma promessa solta. Ao abrir uma tarefa de estudo, o NEXO já associa disciplina e módulo.</p></div><div className="routine-points"><span><b>Estudo</b> reservar tempo para um módulo ou bloco</span><span><b>Questões</b> separar treino específico</span><span><b>Revisão</b> criar espaço para recuperação</span><span><b>Prova</b> marcar datas que mudam a prioridade</span></div></section>
-    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{safeArray(subject?.topics).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o NEXO estiver aberto.</small></form></div>}
+    <section className="calendar-routines"><div><span className="eyebrow">ESTRUTURA DE ESTUDO</span><h3>O calendário conecta intenção e execução</h3><p>Registre o que vai estudar e a tarefa deixa de ser uma promessa solta. Ao abrir uma tarefa de estudo, a VÉSPERA já associa disciplina e módulo.</p></div><div className="routine-points"><span><b>Estudo</b> reservar tempo para um módulo ou bloco</span><span><b>Questões</b> separar treino específico</span><span><b>Revisão</b> criar espaço para recuperação</span><span><b>Prova</b> marcar datas que mudam a prioridade</span></div></section>
+    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{safeArray(subject?.topics).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o VÉSPERA estiver aberto.</small></form></div>}
   </div>
 }
 
@@ -340,12 +369,12 @@ function getOptionFeedback(q, originalIndex, feedback){
 }
 function ModuleQuestion({q,answer,onAnswer}){
   if(q.type==='open') return <article className="module-question open-module-question"><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4><textarea value={answer?.value||''} onChange={e=>onAnswer({value:e.target.value,show:false})} placeholder="Responda com suas palavras..."/><button className="module-answer-link" onClick={()=>onAnswer({value:answer?.value||'',show:!answer?.show})}>{answer?.show?'Ocultar resposta-modelo':'Ver resposta-modelo'}</button>{answer?.show&&<div className="module-model"><strong>Uma boa resposta</strong><p>{q.model}</p></div>}</article>;
-  const view=stableOptionOrder(q); const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=OPTION_FEEDBACK[q.q]||[];
+  const view=stableOptionOrder(q); const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=q.feedback || OPTION_FEEDBACK[q.q]||[];
   return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===view.correct?'mini-status good':'mini-status bad'}>{chosen===view.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{view.options.map((o,i)=>{const original=view.originalIndex[i];return <button key={i} disabled={revealed} className={`mini-option ${revealed&&i===view.correct?'correct':''} ${revealed&&chosen===i&&i!==view.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>})}</div>{revealed&&<div className={`module-feedback ${chosen===view.correct?'is-correct':'is-wrong'}`}><strong>{chosen===view.correct?'Correto · Por quê?':'Sua resposta · o que revisar'}</strong><p>{getOptionFeedback(q,view.originalIndex[chosen],feedback)}</p>{chosen!==view.correct&&<><strong className="feedback-answer-label">Resposta correta</strong><p>{getOptionFeedback(q,q.correct,feedback)}</p></>}</div>}</article>
 }
 
 function Practice({subject,idx,setIdx,answers,setAnswers}){
-  const qs=safeArray(subject.questions); const q=qs[idx]||qs[0]; const answered=answers[idx];
+  const qs=getPracticeQuestions(subject); const q=qs[idx]||qs[0]; const answered=answers[idx];
   if(!q) return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Sem questões</h2><p>Esta matéria ainda não tem questões de prática.</p></div></div></div>;
   return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2><p>Questões desenhadas para separar reconhecimento de compreensão.</p></div><span>{idx+1} / {qs.length}</span></div>
     <div className="progress-track"><div style={{width:`${((idx+1)/qs.length)*100}%`}}/></div>
@@ -461,7 +490,7 @@ const OPTION_FEEDBACK={
 };
 function MCQuestion({q,answered,onAnswer}){
   const view=stableOptionOrder(q);
-  const feedback=OPTION_FEEDBACK[q.q] || [];
+  const feedback=q.feedback || OPTION_FEEDBACK[q.q] || [];
   const selectedOriginal = answered===undefined ? undefined : view.originalIndex[answered];
   return <div className="options"><div className="options-grid">{view.options.map((o,i)=>{const selected=i===answered; const revealed=answered!==undefined; const cls=`option ${revealed&&i===view.correct?'correct':''} ${revealed&&selected&&i!==view.correct?'wrong':''} ${selected?'selected':''} ${revealed&&!selected&&i!==view.correct?'muted-option':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===view.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==view.correct&&<b className="option-result">×</b>}</button>})}</div>
     {answered!==undefined && <div className={`feedback ${answered===view.correct?'is-correct':'is-wrong'}`}><strong>{answered===view.correct?'Correto.':'Vamos revisar esta escolha.'}</strong><span>{getOptionFeedback(q,selectedOriginal,feedback)}</span>{answered!==view.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{getOptionFeedback(q,q.correct,feedback)}</span></div>}</div>}
