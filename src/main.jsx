@@ -13,7 +13,13 @@ const ICON_PATHS = {
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
 const STORAGE = 'nexo:v6.2.4';
-const LEGACY_STORAGES = ['nexo:v6.2.0','nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
+const LEGACY_STORAGES = [
+  'nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
+  'nexo:v6.1.4','nexo:v6.1.3','nexo:v6.1.2','nexo:v6.1.1','nexo:v6.1.0',
+  'nexo:v6.0.0','nexo:v6',
+  'nexo:v5',
+  'nexo:v4'
+];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const load = (k, fallback) => { try {
@@ -83,7 +89,7 @@ function App(){
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.2.3 · universal</div>
+        <div className="side-foot">v6.2.4 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -232,7 +238,30 @@ function Learn({subject,topicIdx,setTopicIdx}){
   const firstRender=useRef(true);
   const [quizAnswers,setQuizAnswers]=useState({});
   const [modulesCollapsed,setModulesCollapsed]=useState(false);
-  useEffect(()=>{ const root=document.querySelector('.subject-summary'); if(!root) return; const nodes=root.querySelectorAll('.mind-node[data-topic]'); const handler=e=>{const node=e.currentTarget;const i=Number(node.dataset.topic); if(Number.isFinite(i) && i<subject.topics.length) setTopicIdx(i);}; nodes.forEach(n=>{n.addEventListener('click',handler);n.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();handler({currentTarget:n});}})}); return()=>nodes.forEach(n=>{n.removeEventListener('click',handler);}); },[topicIdx,subject]);
+  useEffect(()=>{
+    const root=document.querySelector('.subject-summary');
+    if(!root) return;
+    const nodes=root.querySelectorAll('.mind-node[data-topic]');
+    const handler=e=>{
+      const node=e.currentTarget;
+      const i=Number(node.dataset.topic);
+      if(Number.isFinite(i) && i<subject.topics.length) setTopicIdx(i);
+    };
+    const keyHandler=ev=>{
+      if(ev.key==='Enter'||ev.key===' '){
+        ev.preventDefault();
+        handler({currentTarget: ev.currentTarget});
+      }
+    };
+    nodes.forEach(n=>{
+      n.addEventListener('click',handler);
+      n.addEventListener('keydown',keyHandler);
+    });
+    return ()=>nodes.forEach(n=>{
+      n.removeEventListener('click',handler);
+      n.removeEventListener('keydown',keyHandler);
+    });
+  },[topicIdx,subject]);
   useEffect(()=>{setQuizAnswers({});},[topicIdx]);
   useEffect(()=>{
     if(firstRender.current){ firstRender.current=false; return; }
@@ -271,7 +300,7 @@ function Learn({subject,topicIdx,setTopicIdx}){
       </div>
       <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html)}} />
       {miniQuiz.length>0 && <section className="module-check redesigned-check"><div className="module-check-head"><div><span className="eyebrow">RECUPERAÇÃO ATIVA</span><h3>Antes de seguir</h3><p>Recupere a ideia principal sem voltar ao texto. O objetivo é testar o entendimento, não reconhecer a frase.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
-      <>{topicIdx===subject.topics.length-1 && subject.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(subject.summaryHtml)}} />}</><div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
+      {topicIdx===subject.topics.length-1 && subject.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(subject.summaryHtml)}} />}<div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===subject.topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(subject.topics.length-1,i+1))}>Próximo módulo →</button></div>
     </div>
   </div>
 }
@@ -283,9 +312,8 @@ function stableOptionOrder(q){
 }
 function getOptionFeedback(q, originalIndex, feedback){
   if(feedback && feedback[originalIndex]) return feedback[originalIndex];
-  const selected=q.options[originalIndex]; const correct=q.options[q.correct];
   if(originalIndex===q.correct) return q.explain;
-  return `Você escolheu “${selected}”. Essa opção não explica o mecanismo pedido. A questão está apontando para “${correct}”: ${q.explain}`;
+  return `A alternativa escolhida não corresponde ao mecanismo pedido aqui. Compare-a com a alternativa destacada e com a explicação da resposta correta.`;
 }
 function ModuleQuestion({q,answer,onAnswer}){
   if(q.type==='open') return <article className="module-question open-module-question"><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4><textarea value={answer?.value||''} onChange={e=>onAnswer({value:e.target.value,show:false})} placeholder="Responda com suas palavras..."/><button className="module-answer-link" onClick={()=>onAnswer({value:answer?.value||'',show:!answer?.show})}>{answer?.show?'Ocultar resposta-modelo':'Ver resposta-modelo'}</button>{answer?.show&&<div className="module-model"><strong>Uma boa resposta</strong><p>{q.model}</p></div>}</article>;
