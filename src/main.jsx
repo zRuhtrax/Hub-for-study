@@ -12,7 +12,7 @@ const ICON_PATHS = {
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.3';
+const STORAGE = 'nexo:v6.2.4';
 const LEGACY_STORAGES = ['nexo:v6.2.0','nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
@@ -48,6 +48,13 @@ function App(){
   useEffect(()=>save('srs',srs),[srs]);
   useEffect(()=>save('sidebarCollapsed',sidebarCollapsed),[sidebarCollapsed]);
   useEffect(()=>save('calendarEvents',calendarEvents),[calendarEvents]);
+  useLayoutEffect(()=>{
+    if(typeof window!=='undefined'){
+      try{window.history.scrollRestoration='manual';}catch{}
+      window.scrollTo({top:0,left:0,behavior:'auto'});
+    }
+  },[page.name,page.subjectId,subjectTab]);
+
   if(!session) return <Auth mode={authMode} setMode={setAuthMode} onLogin={u=>setSession(u)}/>;
 
   const subject = SUBJECTS.find(s=>s.id===page.subjectId) || null;
@@ -57,7 +64,6 @@ function App(){
   const openSettings = () => setPage({name:'settings',subjectId:null});
   const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
   const openCalendar = () => setPage({name:'calendar',subjectId:null});
-  useLayoutEffect(()=>{ if(typeof window!=='undefined'){ try{window.history.scrollRestoration='manual';}catch{} window.scrollTo({top:0,left:0,behavior:'auto'}); } },[page.name,page.subjectId,subjectTab]);
   const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
   const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
 
