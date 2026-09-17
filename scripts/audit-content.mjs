@@ -3,12 +3,13 @@ import { SUBJECTS } from '../src/content.js';
 let errors = 0;
 let warnings = 0;
 const absoluteWords = /\b(sempre|nunca|todos|todas|apenas|somente|qualquer|automaticamente|exclusivamente)\b/i;
-const totalModules = SUBJECTS.reduce((n,s)=>n+(s.topics?.length ?? 0),0);
+const totalModules = SUBJECTS.reduce((n,s)=>n+(s.topics?.filter(t=>!t.summary).length ?? 0),0);
 const totalPractice = SUBJECTS.reduce((n,s)=>n+(s.questions?.length ?? 0),0);
 
 for (const subject of SUBJECTS) {
   if (!subject.id || !subject.name) { console.error('[ERRO] disciplina sem id/nome'); errors++; }
   for (const [i, topic] of (subject.topics ?? []).entries()) {
+    if (topic.summary) continue;
     if (!topic.id || !topic.title || !topic.html) { console.error(`[ERRO] ${subject.name}: módulo ${i+1} incompleto`); errors++; }
     const quizzes = topic.quiz ?? [];
     if (quizzes.length < 3) { console.warn(`[AVISO] ${topic.title}: menos de 3 questões de fixação`); warnings++; }
@@ -33,6 +34,6 @@ for (const subject of SUBJECTS) {
 }
 
 const visualCount = SUBJECTS.reduce((n,s)=>n+(s.topics ?? []).reduce((m,t)=>m+(t.html.match(/visual-lesson/g)?.length ?? 0),0),0);
-console.log(`Auditoria NEXO v5: ${SUBJECTS.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) de prática, ${visualCount} bloco(s) visual(is).`);
+console.log(`Auditoria NEXO v6.2.2: ${SUBJECTS.length} disciplina(s), ${totalModules} módulo(s), ${totalPractice} questão(ões) de prática, ${visualCount} bloco(s) visual(is).`);
 console.log(`Erros: ${errors} · Avisos: ${warnings}`);
 if (errors) process.exit(1);
