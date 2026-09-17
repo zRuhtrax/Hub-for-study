@@ -12,8 +12,8 @@ const ICON_PATHS = {
 };
 function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.0';
-const LEGACY_STORAGES = ['nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
+const STORAGE = 'nexo:v6.2.2';
+const LEGACY_STORAGES = ['nexo:v6.2.0','nexo:v6.1.4','nexo:v6.1.1','nexo:v4'];
 const BOX_INTERVALS = [1,3,7,14,30];
 const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 const load = (k, fallback) => { try {
@@ -68,7 +68,7 @@ function App(){
     <div className="shell">
       <aside className="sidebar">
         <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
-        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
+        <button className={`sidebar-toggle ${sidebarCollapsed?'is-collapsed':''}`} onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
         <nav className="side-nav">
           <NavButton active={page.name==='home'} icon={<Icon name="home"/>} label="Início" onClick={goHome}/>
           <NavButton active={page.name==='disciplines'} icon={<Icon name="disciplines"/>} label="Disciplinas" onClick={openDisciplines}/>
@@ -76,7 +76,7 @@ function App(){
           <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
           <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
         </nav>
-        <div className="side-foot">v6.2.0 · universal</div>
+        <div className="side-foot">v6.2.2 · universal</div>
       </aside>
       <main className="main">
         <header className="topbar">
@@ -208,7 +208,7 @@ function Choice({active,onClick,icon,title,desc}){return <button className={`cho
 
 function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rateFlashcard,openTerms,setOpenTerms}){
   return <div className="page subject-page">
-    <div className="subject-head"><div><span className="eyebrow">{subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.length}</strong><span>módulos</span></div></div>
+    <div className="subject-head"><div><span className="eyebrow">{subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{subject.topics.filter(t=>!t.summary).length}</strong><span>módulos</span></div></div>
     <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
     {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
     {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
@@ -218,6 +218,9 @@ function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQue
 
 function Learn({subject,topicIdx,setTopicIdx}){
   const topic=subject.topics[topicIdx];
+  const coreTopics=subject.topics.filter(t=>!t.summary);
+  const coreIndex=Math.max(0,coreTopics.findIndex(t=>t.id===topic?.id));
+  const isSummary=Boolean(topic?.summary);
   const firstRender=useRef(true);
   const [quizAnswers,setQuizAnswers]=useState({});
   const [modulesCollapsed,setModulesCollapsed]=useState(false);
@@ -232,26 +235,26 @@ function Learn({subject,topicIdx,setTopicIdx}){
     });
   },[topicIdx]);
   const miniQuiz=(topic.quiz||[]).slice(0,4);
-  const progress=((topicIdx+1)/subject.topics.length)*100;
+  const progress=isSummary?100:((coreIndex+1)/coreTopics.length)*100;
   return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
     <aside className="module-index" aria-label="Módulos">
       <div className="module-index-head">
-        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {subject.topics.length}</span></div>
+        <div><div className="module-index-title">Módulos</div><span>{isSummary?'síntese':`${coreIndex+1} de ${coreTopics.length}`}</span></div>
         <button className="module-collapse-btn icon-only" onClick={()=>setModulesCollapsed(v=>!v)} aria-label={modulesCollapsed?'Mostrar nomes dos módulos':'Ocultar nomes dos módulos'} title={modulesCollapsed?'Expandir módulos':'Recolher módulos'}><span>{modulesCollapsed?'›':'‹'}</span></button>
       </div>
       <div className="module-index-progress"><i style={{width:`${progress}%`}}/></div>
       <div className="module-index-list">
-        {subject.topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
+        {subject.topics.map((t,i)=>{const num=t.summary?'MAPA':String(coreTopics.findIndex(x=>x.id===t.id)+1).padStart(2,'0'); return <button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={t.summary?'Mapa mental':`Módulo ${num}: ${t.title}`}><span>{num}</span><em>{t.title}</em></button>})}
       </div>
     </aside>
     <div className="mobile-module-picker">
       <label htmlFor="module-picker">Módulo atual</label>
       <select id="module-picker" value={topicIdx} onChange={e=>setTopicIdx(Number(e.target.value))}>
-        {subject.topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
+        {subject.topics.map((t,i)=>{const num=t.summary?'MAPA':String(coreTopics.findIndex(x=>x.id===t.id)+1).padStart(2,'0'); return <option key={t.id} value={i}>{num} · {t.title}</option>})}
       </select>
     </div>
     <div className="study-pane">
-      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {subject.topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
+      <div className="study-kicker-row"><div className="module-meta"><span>{isSummary?'SÍNTESE · MAPA MENTAL':`MÓDULO ${String(coreIndex+1).padStart(2,'0')} / ${coreTopics.length}`}</span><span>APRENDER</span></div><span className="study-progress-label">{isSummary?'SÍNTESE':`${Math.round(progress)}%`}</span></div>
       <div className="study-intro">
         <span className="study-intro-label">IDEIA-GUIA</span>
         <h2>{topic.title}</h2>
