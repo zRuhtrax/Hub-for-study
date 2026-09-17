@@ -1,579 +1,443 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { SUBJECTS, DISCIPLINES } from './content.js';
-import './styles.css';
-
-const ICON_PATHS = {
-  home: <path d="M4 11.5 12 4l8 7.5M6 10v9.5a1 1 0 0 0 1 1h3.5v-6h3v6H17a1 1 0 0 0 1-1V10" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>,
-  disciplines: <><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5v-13Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></>,
-  flashcards: <><rect x="3.5" y="7" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M7 4h11a2 2 0 0 1 2 2v9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
-  calendar: <><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/><circle cx="8" cy="13.5" r="1.15" fill="currentColor"/><circle cx="12" cy="13.5" r="1.15" fill="currentColor"/></>,
-  settings: <><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.7"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></>,
+const ICON={
+ book:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 5C4 4 5 3.5 6 3.5H12V20.5H6C5 20.5 4 20 4 19V5Z" stroke="currentColor" stroke-width="1.8"/><path d="M20 5C20 4 19 3.5 18 3.5H12V20.5H18C19 20.5 20 20 20 19V5Z" stroke="currentColor" stroke-width="1.8"/></svg>',
+ refresh:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 12C4 7.6 7.6 4 12 4C14.5 4 16.7 5.2 18.1 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 12C20 16.4 16.4 20 12 20C9.5 20 7.3 18.8 5.9 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 4V7.5H14.5M6 20V16.5H9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4L20 11V19C20 19.6 19.6 20 19 20H14V14H10V20H5C4.4 20 4 19.6 4 19V11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+ chev:'<svg viewBox="0 0 24 24" fill="none"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ card:'<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 3H21V13" stroke="currentColor" stroke-width="1.8"/></svg>',
+ key:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="14" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M11 11L20 2M17 5L19 7M14 8L16 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7V12L15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ chart:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 20V4M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="7" y="12" width="3" height="6" fill="currentColor"/><rect x="12" y="8" width="3" height="10" fill="currentColor"/><rect x="17" y="14" width="3" height="4" fill="currentColor"/></svg>',
+ globe:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M3 12H21M12 3C14.5 6 14.5 18 12 21M12 3C9.5 6 9.5 18 12 21" stroke="currentColor" stroke-width="1.6"/></svg>',
+ target:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5L10 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
-function Icon({name,size=19}){ return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{ICON_PATHS[name]}</svg> }
 
-const STORAGE = 'nexo:v6.2.4';
-const LEGACY_STORAGES = [
-  'nexo:v6.2.3','nexo:v6.2.2','nexo:v6.2.1','nexo:v6.2.0',
-  'nexo:v6.1.4','nexo:v6.1.3','nexo:v6.1.2','nexo:v6.1.1','nexo:v6.1.0',
-  'nexo:v6.0.0','nexo:v6',
-  'nexo:v5',
-  'nexo:v4'
+function vizWrap(label,title,body,caption){return `<section class="diagram visual-lesson" aria-label="${label}"><div class="visual-head"><div><div class="visual-kicker">${label}</div><div class="visual-title">${title}</div></div></div><div class="visual-body">${body}</div><div class="diagram-cap">${caption}</div></section>`}
+
+function topicMap(core,nodes,caption){
+  return `<section class="diagram topic-map" aria-label="Síntese do módulo"><div class="topic-map-core">${core}</div><div class="topic-map-nodes">${nodes.map(n=>`<div class="topic-map-node"><b>${n[0]}</b><span>${n[1]}</span></div>`).join('')}</div><div class="diagram-cap">${caption}</div></section>`;
+}
+
+function svgClimateVsWeather(){return vizWrap('ESCALA DO TEMPO','Um episódio é um ponto; o clima é um padrão',`<svg class="visual-svg concept-graphic" viewBox="0 0 900 300" role="img" aria-label="Comparação entre um evento de tempo e uma série de observações usada para descrever o clima"><line x1="72" y1="245" x2="410" y2="245" stroke="var(--diagram-line)"/><line x1="72" y1="70" x2="72" y2="245" stroke="var(--diagram-line)"/><text x="72" y="52" fill="var(--diagram-muted)" font-size="14">TEMPO</text><text x="72" y="269" fill="var(--diagram-muted)" font-size="12">agora</text><circle cx="150" cy="150" r="12" fill="var(--diagram-blue)"/><line x1="150" y1="150" x2="150" y2="107" stroke="var(--diagram-blue)" stroke-width="3"/><text x="178" y="155" fill="var(--diagram-ink)" font-size="16">chuva em uma tarde</text><line x1="480" y1="245" x2="835" y2="245" stroke="var(--diagram-line)"/><line x1="480" y1="70" x2="480" y2="245" stroke="var(--diagram-line)"/><text x="480" y="52" fill="var(--diagram-muted)" font-size="14">CLIMA</text><text x="480" y="269" fill="var(--diagram-muted)" font-size="12">muitos anos</text><path d="M500 183 C530 122 548 205 578 155 S630 176 657 120 S706 178 735 132 S782 166 812 104" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><line x1="500" y1="154" x2="812" y2="154" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><text x="690" y="178" fill="var(--diagram-muted)" font-size="12">média de referência</text></svg>`, 'Tempo descreve uma condição em escala curta; clima sintetiza padrões, variabilidade e extremos observados ao longo de séries longas.')}
+function svgTemperatureAmplitude(){return vizWrap('VARIABILIDADE TÉRMICA','Duas cidades podem ter a mesma média e comportamentos diferentes',`<div class="paired-chart"><svg class="visual-svg" viewBox="0 0 420 220" role="img" aria-label="Cidade litorânea com menor amplitude térmica"><line x1="50" y1="185" x2="390" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="40" x2="50" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="112" x2="390" y2="112" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><path d="M62 118 C90 108 112 113 140 120 S196 126 222 116 S282 104 310 115 S355 123 378 114" fill="none" stroke="var(--diagram-blue)" stroke-width="5"/><text x="62" y="30" fill="var(--diagram-ink)" font-size="16" font-weight="700">Litoral</text><text x="65" y="205" fill="var(--diagram-muted)" font-size="12">variação menor</text></svg><svg class="visual-svg" viewBox="0 0 420 220" role="img" aria-label="Cidade no interior com maior amplitude térmica"><line x1="50" y1="185" x2="390" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="40" x2="50" y2="185" stroke="var(--diagram-line)"/><line x1="50" y1="112" x2="390" y2="112" stroke="var(--diagram-line)" stroke-dasharray="7 7"/><path d="M62 67 C95 43 118 55 142 86 S188 167 220 92 S273 54 306 86 S354 167 378 70" fill="none" stroke="var(--diagram-amber)" stroke-width="5"/><text x="62" y="30" fill="var(--diagram-ink)" font-size="16" font-weight="700">Interior</text><text x="65" y="205" fill="var(--diagram-muted)" font-size="12">variação maior</text></svg></div>`, 'A média resume o centro da distribuição, mas a amplitude mostra quanto os valores oscilam. A maritimidade tende a amortecer essas oscilações.')}
+function svgPressure(){return vizWrap('GRADIENTE DE PRESSÃO','O ar responde à diferença de pressão',`<svg class="visual-svg" viewBox="0 0 900 260" role="img" aria-label="Campo simplificado de pressão mostrando movimento do ar entre alta e baixa pressão"><circle cx="230" cy="130" r="68" fill="var(--diagram-blue-soft)" stroke="var(--diagram-blue)" stroke-width="3"/><text x="230" y="125" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="18" font-weight="800">ALTA</text><text x="230" y="148" text-anchor="middle" fill="var(--diagram-muted)" font-size="12">pressão</text><circle cx="670" cy="130" r="68" fill="var(--diagram-amber-soft)" stroke="var(--diagram-amber)" stroke-width="3"/><text x="670" y="125" text-anchor="middle" fill="var(--diagram-amber-ink)" font-size="18" font-weight="800">BAIXA</text><text x="670" y="148" text-anchor="middle" fill="var(--diagram-muted)" font-size="12">pressão</text><path d="M315 85 C410 55 490 55 585 85" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><path d="M315 130 C405 105 500 105 585 130" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><path d="M315 175 C410 205 490 205 585 175" fill="none" stroke="var(--diagram-blue)" stroke-width="4"/><text x="450" y="242" text-anchor="middle" fill="var(--diagram-muted)" font-size="13">gradiente de pressão → movimento do ar</text></svg>`, 'Quanto maior o contraste de pressão em uma distância, maior tende a ser o gradiente que impulsiona o movimento horizontal do ar; a trajetória real também depende de rotação e relevo.')}
+function svgAtmosphere(){return vizWrap('ESTRUTURA VERTICAL','Onde cada processo acontece importa',`<div class="atm-v6"><div class="atm-v6-scale"><span>600 km</span><span>85 km</span><span>50 km</span><span>12 km</span><span>0 km</span></div><div class="atm-v6-stack"><div class="atm-v6-layer exo"><b>EXOSFERA</b><span>transição para o espaço</span><small>ar extremamente rarefeito</small></div><div class="atm-v6-layer thermo"><b>TERMOSFERA</b><span>absorção de energia solar</span><small>auroras</small></div><div class="atm-v6-layer meso"><b>MESOSFERA</b><span>temperatura volta a cair</span><small>muitos meteoroides queimam aqui</small></div><div class="atm-v6-layer strato"><b>ESTRATOSFERA</b><span>temperatura aumenta com a altura</span><small>maior concentração de ozônio</small></div><div class="atm-v6-layer tropo"><b>TROPOSFERA</b><span>tempo meteorológico</span><small>maior parte do vapor d’água</small></div></div><div class="atm-v6-profile"><div class="atm-v6-profile-title">PERFIL DE TEMPERATURA</div><svg viewBox="0 0 160 390" aria-label="Perfil conceitual de temperatura com a altitude"><line x1="46" y1="22" x2="46" y2="366" stroke="var(--diagram-line)" stroke-width="2"/><path d="M118 24 L58 116 L104 190 L46 280 L116 360" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/><path d="M46 92h82M46 166h82M46 240h82M46 314h82" stroke="var(--diagram-line)" stroke-dasharray="4 7"/><text x="8" y="112" fill="var(--diagram-muted)" font-size="9">↓</text><text x="8" y="360" fill="var(--diagram-muted)" font-size="9">superfície</text></svg><span>O perfil sobe e desce conforme a camada. Passe o mouse sobre uma faixa para destacar sua função.</span></div></div>`,`As camadas são definidas principalmente pela variação da temperatura com a altitude. A representação é conceitual, não uma escala proporcional. Base de referência: NOAA.`)}
+
+function svgRadiationAndFactors(){return vizWrap('FATORES CLIMÁTICOS','O lugar muda a forma como a energia é recebida e devolvida',`<div class="factor-v7"><article><div class="factor-v7-head"><span>01</span><b>LATITUDE</b></div><svg viewBox="0 0 300 220" aria-label="Raios solares com ângulos diferentes sobre a superfície terrestre"><path d="M40 168 Q150 78 260 168" fill="none" stroke="var(--diagram-line)" stroke-width="4"/><path d="M96 168 L150 66" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/><path d="M204 168 L150 66" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/><circle cx="150" cy="46" r="13" fill="var(--diagram-amber-soft)" stroke="var(--diagram-amber)" stroke-width="2.5"/><g stroke="var(--diagram-amber)" stroke-width="2.5" stroke-linecap="round"><path d="M150 24v-8M150 68v8M126 46h-8M174 46h8M133 29l-5.5-5.5M167 29l5.5-5.5M133 63l-5.5 5.5M167 63l5.5 5.5"/></g></svg><div class="factor-v7-legend"><span><b>Alta latitude</b>raio incide de forma mais oblíqua</span><span><b>Baixa latitude</b>raio incide de forma mais direta</span></div></article><article><div class="factor-v7-head"><span>02</span><b>ALBEDO</b></div><svg viewBox="0 0 300 220" aria-label="Superfícies com maior ou menor reflexão da luz solar"><rect x="40" y="130" width="90" height="56" rx="10" fill="var(--diagram-surface)" stroke="var(--diagram-line)" stroke-width="2"/><rect x="170" y="130" width="90" height="56" rx="10" fill="var(--diagram-ink)" opacity=".85"/><path d="M85 46 V118" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" marker-end="url(#fArrowA)"/><path d="M85 118 L60 84 M85 118 L110 84" stroke="var(--accent)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M215 46 V124" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" marker-end="url(#fArrowA)"/><defs><marker id="fArrowA" markerWidth="9" markerHeight="9" refX="4" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 0 L4 7 Z" fill="var(--accent)"/></marker></defs></svg><div class="factor-v7-legend"><span><b>Clara</b>reflete mais radiação</span><span><b>Escura</b>absorve mais radiação</span></div></article><article><div class="factor-v7-head"><span>03</span><b>OCEANO × CONTINENTE</b></div><svg viewBox="0 0 300 220" aria-label="Resposta térmica mais lenta do oceano e mais rápida do continente"><text x="40" y="70" fill="var(--diagram-muted)" font-size="12">Oceano</text><rect x="40" y="82" width="90" height="20" rx="10" fill="var(--accent)" opacity=".75"/><text x="40" y="150" fill="var(--diagram-muted)" font-size="12">Continente</text><rect x="40" y="162" width="220" height="20" rx="10" fill="var(--accent)"/><line x1="40" y1="60" x2="40" y2="196" stroke="var(--diagram-line)" stroke-width="2"/></svg><div class="factor-v7-legend"><span><b>Oceano</b>amplitude térmica menor</span><span><b>Continente</b>amplitude térmica maior</span></div></article></div>`,`Latitude altera o ângulo de incidência; albedo determina quanto da radiação é refletida; oceano e continente respondem em ritmos térmicos diferentes.`)}
+
+function svgCirculation(){return vizWrap('CIRCULAÇÃO GERAL','Três células conectam aquecimento desigual e movimento do ar',`<div class="circ-v7"><svg viewBox="0 0 760 260" aria-label="Representação simplificada das células de Hadley, Ferrel e Polar"><line x1="40" y1="210" x2="720" y2="210" stroke="var(--diagram-line)" stroke-width="2"/><line x1="380" y1="34" x2="380" y2="216" stroke="var(--diagram-line)" stroke-dasharray="5 7"/><rect x="40" y="60" width="150" height="150" fill="var(--diagram-blue-soft)"/><rect x="190" y="60" width="190" height="150" fill="var(--accent)" opacity=".12"/><rect x="380" y="60" width="190" height="150" fill="var(--accent)" opacity=".12"/><rect x="570" y="60" width="150" height="150" fill="var(--diagram-blue-soft)"/><text x="115" y="40" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="12" font-weight="800">POLAR</text><text x="285" y="40" text-anchor="middle" fill="var(--accent)" font-size="12" font-weight="800">FERREL</text><text x="475" y="40" text-anchor="middle" fill="var(--accent)" font-size="12" font-weight="800">FERREL</text><text x="645" y="40" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="12" font-weight="800">POLAR</text><text x="115" y="230" text-anchor="middle" fill="var(--diagram-muted)" font-size="10">60°–90°</text><text x="285" y="230" text-anchor="middle" fill="var(--diagram-muted)" font-size="10">30°–60°</text><text x="380" y="230" text-anchor="middle" fill="var(--diagram-muted)" font-size="10" font-weight="800">EQUADOR</text><text x="475" y="230" text-anchor="middle" fill="var(--diagram-muted)" font-size="10">30°–60°</text><text x="645" y="230" text-anchor="middle" fill="var(--diagram-muted)" font-size="10">60°–90°</text><path d="M380 60 V206" stroke="var(--accent)" stroke-width="5" marker-end="url(#cArrow)"/><text x="392" y="130" fill="var(--accent)" font-size="11" font-weight="700">ar sobe</text><path d="M190 206 V64" stroke="var(--diagram-blue)" stroke-width="5" marker-end="url(#cArrowB)"/><path d="M570 206 V64" stroke="var(--diagram-blue)" stroke-width="5" marker-end="url(#cArrowB)"/><text x="145" y="130" fill="var(--diagram-blue-ink)" font-size="11" font-weight="700">ar desce</text><defs><marker id="cArrow" markerWidth="9" markerHeight="9" refX="4" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 0 L4 7 Z" fill="var(--accent)"/></marker><marker id="cArrowB" markerWidth="9" markerHeight="9" refX="4" refY="0" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 7 L8 7 L4 0 Z" fill="var(--diagram-blue)"/></marker></defs></svg><div class="circ-v7-legend"><span><i class="dot-accent"></i>Célula de Hadley — equador aos 30°, a mais relevante para o Brasil</span><span><i class="dot-blue"></i>Células de Ferrel e Polar — completam a circulação até os polos</span></div></div>`,`O desenho é deliberadamente simplificado: o objetivo é enxergar as três faixas de circulação e seus movimentos verticais, não reproduzir toda a dinâmica atmosférica.`)}
+
+function svgFronts(){return vizWrap('FRENTES','A diferença está em quem avança e em como o ar sobe',`<div class="front-v7">
+  <article>
+    <header><b>FRENTE FRIA</b><span>ar frio avança, empurra o ar quente pra cima bruscamente</span></header>
+    <svg viewBox="0 0 340 220" role="img" aria-label="Frente fria: ar frio avança e força o ar quente a subir de forma abrupta">
+      <line x1="24" y1="170" x2="316" y2="170" stroke="var(--diagram-line)" stroke-width="2"/>
+      <rect x="24" y="120" width="160" height="50" fill="var(--diagram-blue-soft)" opacity=".55"/>
+      <text x="40" y="150" fill="var(--diagram-blue-ink)" font-size="12" font-weight="800">AR FRIO →</text>
+      <path d="M184 170 Q214 130 250 60" fill="none" stroke="var(--diagram-amber)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M250 60 L242 76 M250 60 L262 74" stroke="var(--diagram-amber)" stroke-width="5" stroke-linecap="round"/>
+      <text x="196" y="196" fill="var(--diagram-amber-ink)" font-size="11" font-weight="800">AR QUENTE sobe rápido</text>
+      <ellipse cx="262" cy="46" rx="28" ry="12" fill="var(--diagram-surface)" stroke="var(--diagram-line)"/>
+    </svg>
+    <p>Subida abrupta. Chuva forte e rápida, muitas vezes com trovoadas.</p>
+  </article>
+  <article>
+    <header><b>FRENTE QUENTE</b><span>ar quente avança, sobe devagar por cima do ar frio</span></header>
+    <svg viewBox="0 0 340 220" role="img" aria-label="Frente quente: ar quente avança e sobe lentamente sobre o ar frio">
+      <line x1="24" y1="170" x2="316" y2="170" stroke="var(--diagram-line)" stroke-width="2"/>
+      <rect x="24" y="140" width="292" height="30" fill="var(--diagram-blue-soft)" opacity=".45"/>
+      <text x="40" y="160" fill="var(--diagram-blue-ink)" font-size="11" font-weight="800">AR FRIO (fica embaixo)</text>
+      <path d="M24 140 Q150 138 316 74" fill="none" stroke="var(--diagram-amber)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M316 74 L306 88 M316 74 L326 86" stroke="var(--diagram-amber)" stroke-width="5" stroke-linecap="round"/>
+      <text x="96" y="60" fill="var(--diagram-amber-ink)" font-size="11" font-weight="800">AR QUENTE sobe devagar</text>
+      <ellipse cx="150" cy="98" rx="34" ry="10" fill="var(--diagram-surface)" stroke="var(--diagram-line)"/>
+      <ellipse cx="230" cy="86" rx="30" ry="9" fill="var(--diagram-surface)" stroke="var(--diagram-line)"/>
+    </svg>
+    <p>Subida gradual. Chuva fraca e prolongada, céu encoberto.</p>
+  </article>
+</div>`,`Nos dois casos, uma massa de ar avança sobre outra. A diferença está no ângulo de subida: brusco na fria (chuva forte e rápida), suave na quente (chuva fraca e prolongada).`)}
+
+function svgENSO(){return vizWrap('ENSO','Um mesmo oceano, três configurações diferentes',`<div class="enso-clear">
+  <div class="enso-clear-head"><span></span><b>Pacífico equatorial</b><span>Leitura rápida</span></div>
+  <article class="enso-clear-row normal"><strong>NORMAL</strong>
+    <svg viewBox="0 0 720 150" role="img" aria-label="Condição normal: alísios empurram água quente para oeste, ressurgência ativa a leste">
+      <rect x="40" y="66" width="640" height="32" rx="16" fill="var(--diagram-blue-soft)"/>
+      <rect x="510" y="66" width="170" height="32" rx="16" fill="var(--diagram-amber)"/>
+      <text x="46" y="46" fill="var(--diagram-muted)" font-size="10">América do Sul</text>
+      <text x="576" y="46" fill="var(--diagram-muted)" font-size="10">Oeste do Pacífico</text>
+      <path d="M580 100 C460 116 340 116 160 100" fill="none" stroke="var(--diagram-blue)" stroke-width="4" marker-end="url(#ensoArrow)"/>
+      <text x="310" y="132" fill="var(--diagram-blue-ink)" font-size="11" font-weight="700">← alísios</text>
+      <path d="M150 100 V128 M180 100 V128 M210 100 V128" stroke="var(--diagram-blue)" stroke-width="4"/>
+      <text x="44" y="142" fill="var(--diagram-blue-ink)" font-size="10" font-weight="700">ressurgência ativa</text>
+      <text x="530" y="88" fill="var(--diagram-ink)" font-size="11" font-weight="800">água quente</text>
+      <defs><marker id="ensoArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--diagram-blue)"/></marker></defs>
+    </svg>
+    <div><span>Alísios empurram água quente para oeste.</span><small>Ressurgência ativa a leste.</small></div>
+  </article>
+  <article class="enso-clear-row nino"><strong>EL NIÑO</strong>
+    <svg viewBox="0 0 720 150" role="img" aria-label="El Niño: alísios enfraquecem, água quente avança para leste, ressurgência enfraquece">
+      <rect x="40" y="66" width="640" height="32" rx="16" fill="var(--diagram-blue-soft)"/>
+      <rect x="260" y="66" width="420" height="32" rx="16" fill="var(--diagram-amber)"/>
+      <text x="46" y="46" fill="var(--diagram-muted)" font-size="10">América do Sul</text>
+      <text x="576" y="46" fill="var(--diagram-muted)" font-size="10">Oeste do Pacífico</text>
+      <path d="M560 100 C460 112 360 112 280 100" fill="none" stroke="var(--diagram-blue)" stroke-width="3" opacity=".5" marker-end="url(#ensoArrowW)"/>
+      <text x="380" y="132" fill="var(--diagram-blue-ink)" font-size="11" font-weight="700">← alísios enfraquecidos</text>
+      <path d="M170 100 V118" stroke="var(--diagram-blue)" stroke-width="2" opacity=".35"/>
+      <text x="44" y="142" fill="var(--diagram-muted)" font-size="10">ressurgência enfraquece</text>
+      <text x="380" y="88" fill="var(--diagram-ink)" font-size="11" font-weight="800">água quente avança para leste</text>
+      <defs><marker id="ensoArrowW" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--diagram-blue)" opacity=".5"/></marker></defs>
+    </svg>
+    <div><span>Calor desloca-se para o centro/leste.</span><small>Circulação atmosférica se reorganiza.</small></div>
+  </article>
+  <article class="enso-clear-row nina"><strong>LA NIÑA</strong>
+    <svg viewBox="0 0 720 150" role="img" aria-label="La Niña: alísios se fortalecem, água quente fica concentrada a oeste, ressurgência reforçada">
+      <rect x="40" y="66" width="640" height="32" rx="16" fill="var(--diagram-blue-soft)"/>
+      <rect x="510" y="66" width="170" height="32" rx="16" fill="var(--diagram-amber)"/>
+      <text x="46" y="46" fill="var(--diagram-muted)" font-size="10">América do Sul</text>
+      <text x="576" y="46" fill="var(--diagram-muted)" font-size="10">Oeste do Pacífico</text>
+      <path d="M590 100 C460 122 320 122 140 100" fill="none" stroke="var(--diagram-blue)" stroke-width="6" marker-end="url(#ensoArrowS)"/>
+      <text x="310" y="140" fill="var(--diagram-blue-ink)" font-size="11" font-weight="700">← alísios fortalecidos</text>
+      <path d="M140 100 V132 M170 100 V132 M200 100 V132 M230 100 V132" stroke="var(--diagram-blue)" stroke-width="5"/>
+      <text x="44" y="148" fill="var(--diagram-blue-ink)" font-size="10" font-weight="700">ressurgência reforçada</text>
+      <text x="530" y="88" fill="var(--diagram-ink)" font-size="11" font-weight="800">água quente concentrada</text>
+      <defs><marker id="ensoArrowS" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--diagram-blue)"/></marker></defs>
+    </svg>
+    <div><span>Padrão leste-oeste mais acentuado.</span><small>Ressurgência e alísios se intensificam.</small></div>
+  </article>
+  <div class="enso-rule"><b>Compare sempre três coisas:</b> posição da água quente · força dos alísios · intensidade da ressurgência.</div>
+</div>`,`O ponto do esquema não é decorar três desenhos: é perceber como uma mudança no oceano e nos ventos reorganiza o sistema acoplado. Referência visual: NOAA/PMEL.`)}
+
+function svgTropicalCyclone(){return vizWrap('CICLONE TROPICAL','Calor do oceano → convecção → circulação organizada',`<div class="cyclone-v7"><svg viewBox="0 0 300 220" aria-label="Mecanismo de um ciclone tropical"><ellipse cx="150" cy="188" rx="130" ry="20" fill="var(--diagram-blue-soft)"/><text x="150" y="192" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="11" font-weight="700">OCEANO QUENTE</text><path d="M108 168 C112 130 122 100 150 90" fill="none" stroke="var(--diagram-amber)" stroke-width="6" stroke-linecap="round" marker-end="url(#tcArrow)"/><path d="M192 168 C188 130 178 100 150 90" fill="none" stroke="var(--diagram-amber)" stroke-width="6" stroke-linecap="round" marker-end="url(#tcArrow)"/><defs><marker id="tcArrow" markerWidth="9" markerHeight="9" refX="4" refY="0" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 7 L8 7 L4 0 Z" fill="var(--diagram-amber)"/></marker></defs><circle cx="150" cy="66" r="38" fill="var(--diagram-surface)" stroke="var(--accent)" stroke-width="4"/><text x="150" y="61" text-anchor="middle" fill="var(--accent)" font-size="12" font-weight="800">BAIXA</text><text x="150" y="77" text-anchor="middle" fill="var(--diagram-muted)" font-size="10">pressão</text></svg><div class="cyclone-v7-steps"><span><b>1 · Fonte</b>água quente evapora e fornece vapor</span><span><b>2 · Conversão</b>o vapor sobe, condensa e libera calor</span><span><b>3 · Organização</b>baixa pressão + rotação sustentam a circulação</span></div></div>`,`A temperatura do oceano é importante, mas a organização de um ciclone tropical também depende de umidade, cisalhamento vertical, perturbação inicial e efeito de Coriolis.`)}
+
+function svgGreenhouse(){return vizWrap('BALANÇO DE ENERGIA','A Terra recebe, transforma e redistribui energia',`<div class="gh-v7"><svg viewBox="0 0 300 190" aria-label="Balanço de energia com radiação solar, superfície e atmosfera"><circle cx="40" cy="90" r="26" fill="var(--diagram-amber-soft)" stroke="var(--diagram-amber)" stroke-width="3"/><text x="40" y="95" text-anchor="middle" fill="var(--diagram-amber-ink)" font-size="11" font-weight="800">SOL</text><path d="M70 90 H130" stroke="var(--diagram-amber)" stroke-width="6" marker-end="url(#ghA)"/><rect x="132" y="60" width="90" height="60" rx="12" fill="var(--diagram-blue-soft)" stroke="var(--diagram-blue)" stroke-width="3"/><text x="177" y="95" text-anchor="middle" fill="var(--diagram-blue-ink)" font-size="12" font-weight="800">SUPERFÍCIE</text><path d="M222 70 Q262 50 286 75" fill="none" stroke="var(--accent)" stroke-width="5" marker-end="url(#ghB)"/><path d="M270 84 Q262 102 234 106" fill="none" stroke="var(--accent)" stroke-width="4" marker-end="url(#ghB)" opacity=".7"/><text x="230" y="35" text-anchor="middle" fill="var(--accent)" font-size="10" font-weight="700">parte sai</text><text x="177" y="150" text-anchor="middle" fill="var(--accent)" font-size="10" font-weight="700">parte retorna (GEE)</text><defs><marker id="ghA" markerWidth="9" markerHeight="9" refX="4" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 0 L4 7 Z" fill="var(--diagram-amber)"/></marker><marker id="ghB" markerWidth="9" markerHeight="9" refX="4" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 0 L4 7 Z" fill="var(--accent)"/></marker></defs></svg><div class="gh-v7-key"><span><b>Entrada</b>radiação de onda curta do Sol</span><span><b>Transformação</b>superfície aquece e emite infravermelho</span><span><b>Saída</b>parte escapa, parte é retida pelos gases de efeito estufa</span></div></div>`,`O efeito estufa não é uma tampa física. Gases de efeito estufa absorvem e reemitem parte da radiação infravermelha, alterando o balanço energético do sistema.`)}
+
+function svgClimateChangeChain(){return vizWrap('MECANISMO','A mudança climática tem etapas intermediárias que ajudam a explicar o resultado',`<div class="climate-chain-v3"><article><span>01</span><b>Emissões</b><p>combustíveis fósseis, uso da terra e outras atividades aumentam a emissão de GEE</p></article><i>→</i><article><span>02</span><b>Concentração</b><p>parte dos gases permanece na atmosfera e modifica sua composição</p></article><i>→</i><article><span>03</span><b>Balanço de energia</b><p>o sistema absorve e reemite infravermelho de um modo diferente</p></article><i>→</i><article><span>04</span><b>Sistema climático</b><p>médias, extremos, circulação, gelo, nível do mar e outros componentes respondem</p></article></div>`, 'A cadeia é útil porque separa causa, mecanismo físico e resposta. A intensidade e a forma das mudanças variam conforme a região e o componente do sistema analisado.');}
+
+const SUBJECTS=[{
+ id:"climatologia",name:"Climatologia",discipline:"Geografia",tag:"Geografia · Capítulo 3",icon:ICON.globe,
+ learningGoal:"Entender como energia, atmosfera e circulação produzem diferentes climas.",
+ topics:[
+  {id:"clima-tempo",title:"Clima × Tempo",sub:"Comece distinguindo evento momentâneo de padrão de longo prazo",html:`
+    ${svgClimateVsWeather()}
+    <div class="idea-box"><div class="k">Ideia central</div><p><strong>Tempo</strong> descreve o estado da atmosfera em determinado momento e lugar. <strong>Clima</strong> descreve padrões estatísticos do tempo observados ao longo de períodos longos. Um episódio de chuva é tempo; a recorrência de chuva em uma região faz parte do clima.</p></div>
+    <p>Essa distinção evita um erro muito comum: usar um dia frio, uma onda de calor ou uma chuva intensa isolada como se, sozinhos, definissem a mudança do clima. O clima não apaga a variabilidade; ele procura padrões dentro dela.</p>
+    <h4>Como os dois se conectam</h4>
+    <div class="cause-chain"><div class="cause-step"><strong>1. O tempo acontece</strong><span>Temperatura, pressão, umidade, vento e precipitação variam diariamente.</span></div><div class="cause-link">↓</div><div class="cause-step"><strong>2. Muitos tempos são observados</strong><span>Décadas de medições permitem comparar médias, extremos e frequência de eventos.</span></div><div class="cause-link">↓</div><div class="cause-step"><strong>3. Surge uma descrição climática</strong><span>O clima resume padrões e variabilidade, não uma previsão para um dia específico.</span></div></div>
+    <div class="why-box"><div class="k">Por que isso importa?</div><p>Previsão do tempo responde “o que pode acontecer nos próximos dias?”. Climatologia responde “quais padrões e faixas de variação são típicos deste lugar ao longo de muitos anos?”. As duas áreas usam observações atmosféricas, mas fazem perguntas diferentes.</p></div>
+    <div class="connection-box"><div class="k">Conexão com os próximos módulos</div><p>Os <strong>elementos do clima</strong> são as variáveis que medimos. Os <strong>fatores climáticos</strong> ajudam a explicar por que essas variáveis diferem de lugar para lugar. A <strong>dinâmica atmosférica</strong> explica como o sistema se movimenta.</p></div>
+  `,summaryHtml:topicMap('TEMPO × CLIMA',[
+    ['Escala curta','Tempo é o estado atmosférico em um momento e lugar.'],
+    ['Escala longa','Clima é o padrão estatístico observado por décadas.'],
+    ['Variabilidade','O clima não apaga a variabilidade: ele a contextualiza.'],
+    ['Evidência','Um evento isolado não define tendência climática.']
+  ],'Use o mapa para reconstruir a distinção entre evento e padrão antes de avançar.'),quiz:[
+   {type:"mc",q:"Uma estação registra 34 °C e chuva intensa em uma tarde. Qual conclusão é mais defensável?",options:["O clima da cidade é definido por essa tarde","Isso descreve o tempo; para caracterizar o clima é preciso analisar séries e padrões","A chuva prova uma mudança climática","A temperatura deixa de ser uma variável climática"],correct:1,explain:"A observação é pontual. Clima é caracterizado por padrões e variabilidade em escalas de tempo longas."},
+   {type:"mc",q:"Duas décadas mostram aumento persistente da temperatura média de uma região. O que diferencia essa evidência de um dia excepcionalmente quente?",options:["A análise considera uma série temporal e compara a tendência com a variabilidade esperada","Um único dia não permite avaliar uma tendência de longo prazo","A média anual resume os dados, mas pode esconder parte da variabilidade","A temperatura diária é observação do tempo, enquanto séries longas ajudam a caracterizar o clima"],correct:0,explain:"Uma tendência climática é avaliada em séries temporais, levando em conta variabilidade e distribuição dos dados."},
+   {type:"mc",challenge:true,q:"Uma cidade teve três anos seguidos acima da média histórica. Qual análise seria mais adequada antes de afirmar uma mudança permanente?",options:["Comparar os dados com poucos anos recentes","Examinar uma série mais longa, a variabilidade e outros indicadores climáticos","Considerar os anos sem verificar a variabilidade e o período de referência","Usar o recorde de temperatura como principal evidência"],correct:1,explain:"Períodos curtos podem conter variabilidade natural. A avaliação climática precisa de contexto temporal e estatístico."},
+   {type:"open",q:"Explique, em poucas frases, por que previsão do tempo e climatologia respondem perguntas diferentes.",model:"A previsão do tempo busca estimar o estado atmosférico em uma escala curta. A climatologia analisa padrões, médias, variabilidade e extremos ao longo de períodos longos.",terms:["tempo","clima","escala temporal"]},
+   {type:"mc",q:"Qual situação depende mais claramente de uma descrição climática do que de uma observação do tempo?",options:["A máxima temperatura prevista para amanhã","A frequência típica de chuvas no verão de uma região","A chuva registrada às 16h de hoje","A direção do vento nesta manhã"],correct:1,explain:"A frequência típica ao longo das estações é um padrão de longo prazo, portanto pertence à descrição climática."}
+  ]},
+  {id:"elementos",title:"Elementos do Clima",sub:"Aprenda a ler um clima como um conjunto de variáveis",html:`
+    <div class="concept-grid"><div class="concept"><div class="t">Temperatura</div><div class="d">Indica o estado térmico do ar.</div></div><div class="concept"><div class="t">Umidade</div><div class="d">Mostra a presença de vapor d’água na atmosfera.</div></div><div class="concept"><div class="t">Precipitação</div><div class="d">Água que chega à superfície em forma líquida ou sólida.</div></div><div class="concept"><div class="t">Pressão</div><div class="d">Relaciona-se ao peso do ar e às diferenças que ajudam a gerar ventos.</div></div></div>
+    <h4>Temperatura não é apenas uma média</h4><p>A <strong>amplitude térmica</strong> é a diferença entre valores de temperatura, como máxima e mínima de um período. Dois locais podem ter médias parecidas e, ainda assim, comportamentos muito diferentes ao longo do dia ou do ano.</p>${svgTemperatureAmplitude()}
+    <h4>Umidade relativa: o contexto importa</h4><p>Umidade relativa é uma medida percentual da quantidade de vapor presente em relação ao máximo que o ar consegue conter naquela temperatura. Como a capacidade de retenção depende da temperatura, a mesma quantidade de vapor pode corresponder a um percentual diferente em momentos diferentes.</p>
+    <h4>Precipitação: pense no mecanismo</h4><ul><li><strong>Frontal:</strong> associada à interação entre massas de ar de características diferentes.</li><li><strong>Orográfica:</strong> o relevo força o ar úmido a subir.</li><li><strong>Convectiva:</strong> o aquecimento favorece a subida do ar, formando nuvens convectivas.</li></ul>
+    <h4>Pressão e vento</h4>${svgPressure()}<p>Em uma explicação simplificada, o vento está ligado às diferenças de pressão: o ar tende a se mover de regiões de maior pressão para regiões de menor pressão. A rotação da Terra e o relevo também interferem na direção real do escoamento.</p>
+    <div class="connection-box"><div class="k">Conexão</div><p>Quando você junta temperatura + umidade + pressão + movimento do ar, começa a sair da lista de definições e a enxergar <strong>mecanismos atmosféricos</strong>.</p></div>
+  `,summaryHtml:topicMap('ELEMENTOS DO CLIMA',[
+    ['Temperatura','Estado térmico do ar; a média esconde a amplitude.'],
+    ['Umidade','Vapor presente em relação à capacidade do ar.'],
+    ['Precipitação','Frontal, orográfica ou convectiva pelo gatilho de subida.'],
+    ['Pressão','Diferenças geram vento; rotação e relevo alteram direção.']
+  ],'Os elementos são as variáveis que medimos; o passo seguinte é entender o que as faz variar entre lugares.'),quiz:[
+   {type:"mc",q:"Duas cidades têm a mesma temperatura média anual, mas uma possui verões e invernos muito mais contrastantes. Qual medida ajuda diretamente a perceber essa diferença?",options:["Amplitude térmica","Pressão atmosférica média","Latitude absoluta","Precipitação anual isolada"],correct:0,explain:"A amplitude térmica evidencia a diferença entre valores de temperatura em um período e pode revelar contrastes que a média esconde."},
+   {type:"mc",q:"Por que 70% de umidade relativa não representa necessariamente a mesma quantidade de vapor d’água em duas situações?",options:["Porque a mesma porcentagem pode corresponder a capacidades diferentes de retenção de vapor","Porque a capacidade de o ar conter vapor varia com a temperatura","Porque a porcentagem indica uma razão, não uma quantidade absoluta de água","Porque a presença de vapor independe de atingir uma porcentagem específica"],correct:1,explain:"A umidade relativa compara o vapor presente com a capacidade máxima do ar naquela temperatura."},
+   {type:"mc",q:"Depois que ar úmido sobe ao encontrar uma serra, ocorre resfriamento e formação de nuvens. Que mecanismo de precipitação está mais diretamente envolvido?",options:["Convectivo","Orográfico","Frontal","Associado principalmente à presença de um sistema de baixa pressão"],correct:1,explain:"Na chuva orográfica, o relevo força a ascensão do ar, favorecendo resfriamento, condensação e precipitação."},
+   {type:"open",q:"Compare chuva frontal, orográfica e convectiva pelo processo que força o ar a subir.",model:"Na frontal, a ascensão ocorre pela interação entre massas de ar de características diferentes. Na orográfica, o relevo força a subida. Na convectiva, o aquecimento da superfície gera ar mais quente e ascendente.",terms:["frontal","orográfica","convectiva"]},
+   {type:"mc",challenge:true,q:"Em uma tarde muito quente, a umidade relativa cai sem grande retirada de vapor d’água. Qual explicação é mais coerente?",options:["O ar ficou mais frio e passou a comportar menos vapor","O aquecimento aumentou a capacidade máxima de vapor do ar, alterando a razão usada na umidade relativa","A pressão atmosférica transforma vapor em chuva imediatamente","A umidade relativa mede diretamente a quantidade absoluta de chuva"],correct:1,explain:"Como a capacidade de retenção de vapor aumenta com a temperatura, a mesma quantidade de vapor pode corresponder a uma umidade relativa menor."}
+  ]},
+  {id:"atmosfera",title:"Camadas da Atmosfera",sub:"Localize os processos antes de tentar explicá-los",html:`
+    ${svgAtmosphere()}
+    <p>A atmosfera não é uniforme. Suas propriedades mudam com a altitude, e por isso costuma ser dividida em <strong>troposfera, estratosfera, mesosfera, termosfera e exosfera</strong>.</p>
+    <ul><li><strong>Troposfera:</strong> é a camada mais próxima da superfície e a principal região dos fenômenos meteorológicos.</li><li><strong>Estratosfera:</strong> concentra a maior parte do ozônio atmosférico, importante na absorção de radiação ultravioleta.</li><li><strong>Mesosfera:</strong> é uma região em que muitos meteoroides queimam por atrito.</li><li><strong>Termosfera:</strong> recebe forte influência da energia solar e está associada a fenômenos como auroras.</li><li><strong>Exosfera:</strong> é extremamente rarefeita e faz uma transição gradual para o espaço.</li></ul>
+    <div class="warning-box"><div class="k">Cuidado com uma simplificação</div><p>As camadas não são “caixas totalmente separadas”. Os limites são regiões de transição, e fenômenos como a ionosfera atravessam partes de mais de uma camada.</p></div>
+    <h4>Composição não é o mesmo que camadas</h4><p>As cinco camadas são classificadas principalmente pela estrutura vertical da atmosfera. Já a composição básica do ar perto da superfície é dominada por nitrogênio e oxigênio, além de pequenas quantidades de outros gases e vapor d’água.</p>
+    <div class="why-box"><div class="k">Por que isso ajuda na climatologia?</div><p>Porque evita procurar mecanismos climáticos na parte errada da atmosfera. O tempo meteorológico que sentimos na superfície está fortemente ligado à troposfera, onde existe a maior parte da massa de ar e do vapor d’água atmosférico.</p></div>
+  `,summaryHtml:topicMap('CAMADAS DA ATMOSFERA',[
+    ['Troposfera','Camada inferior; tempo meteorológico e vapor d’água.'],
+    ['Estratosfera','Concentra ozônio; absorve radiação ultravioleta.'],
+    ['Mesosfera','Muitos meteoroides queimam por atrito.'],
+    ['Termosfera','Influência solar intensa; auroras.'],
+    ['Exosfera','Rarefeita; transição para o espaço.']
+  ],'As camadas são definidas pela variação da temperatura com a altitude; são regiões de transição, não caixas isoladas.'),quiz:[
+   {type:"mc",q:"Em qual camada ocorrem a maior parte das nuvens, chuvas e outros fenômenos meteorológicos próximos à superfície?",options:["Estratosfera","Troposfera","Mesosfera","Exosfera"],correct:1,explain:"A troposfera é a camada inferior e concentra a maior parte da massa atmosférica e do vapor d’água relevante ao tempo meteorológico."},
+   {type:"mc",q:"Qual associação está correta?",options:["Troposfera - maior parte do tempo meteorológico","Exosfera - principal concentração de vapor d’água","Mesosfera - camada onde vivemos","Estratosfera - camada mais próxima da superfície"],correct:0,explain:"A troposfera é a camada diretamente ligada aos fenômenos meteorológicos cotidianos."},
+   {type:"mc",q:"Qual sequência apresenta as camadas principais da atmosfera a partir da superfície?",options:["Troposfera, estratosfera, mesosfera, termosfera, exosfera","Estratosfera, troposfera, termosfera, mesosfera, exosfera","Troposfera, mesosfera, estratosfera, exosfera, termosfera","Exosfera, termosfera, mesosfera, estratosfera, troposfera"],correct:0,explain:"A ordem convencional é troposfera, estratosfera, mesosfera, termosfera e exosfera."},
+   {type:"mc",challenge:true,q:"Por que conhecer a estrutura vertical da atmosfera ajuda na climatologia?",options:["Porque tratar a atmosfera como um conjunto uniforme dificulta localizar processos","Porque permite relacionar processos e propriedades à altitude em vez de tratar a atmosfera como uma camada uniforme","Porque as camadas mais externas concentrariam os principais processos climáticos","Porque a altitude exerce pouca influência sobre as propriedades da atmosfera"],correct:1,explain:"Temperatura, composição e processos variam com a altitude; distinguir as camadas evita generalizações incorretas."},
+   {type:"open",q:"Explique a importância da troposfera para o estudo do tempo e diferencie sua posição da estratosfera.",model:"A troposfera é a camada inferior, onde se concentram a maior parte do vapor d’água e os fenômenos meteorológicos do cotidiano. A estratosfera fica acima dela e possui características distintas, incluindo a maior concentração de ozônio atmosférico.",terms:["troposfera","estratosfera","tempo meteorológico"]}
+  ]},
+  {id:"fatores",title:"Fatores Climáticos",sub:"Por que lugares diferentes recebem e distribuem energia de modos diferentes",html:`
+    ${svgRadiationAndFactors()}
+    <p>Agora fazemos a pergunta mais importante: <strong>por que dois lugares da Terra podem ter climas diferentes?</strong> Os fatores climáticos alteram a maneira como a energia é recebida, armazenada ou redistribuída.</p>
+    <h4>Latitude</h4><p>Quanto maior a latitude, em geral mais inclinada é a incidência média da radiação solar. A mesma energia tende a se distribuir por uma área maior, reduzindo a energia recebida por unidade de área.</p>
+    <h4>Altitude</h4><p>Com o aumento da altitude, a pressão atmosférica diminui. Em condições usuais da troposfera, a temperatura também tende a cair com a altitude.</p>
+    <h4>Maritimidade e continentalidade</h4><p>A água tem grande capacidade de armazenar calor. Como o oceano responde mais lentamente ao aquecimento e ao resfriamento, regiões próximas ao mar tendem a ter variações térmicas menores que áreas continentais comparáveis.</p>
+    <h4>Albedo</h4><p>É a capacidade de uma superfície refletir radiação. Superfícies mais claras costumam refletir mais; superfícies escuras tendem a absorver mais energia. Isso interfere no balanço de energia.</p>
+    <h4>Correntes marítimas</h4><p>Correntes deslocam grandes quantidades de calor e podem alterar temperatura e umidade das áreas costeiras. Correntes frias ajudam a explicar a aridez de algumas costas subtropicais, enquanto correntes quentes podem favorecer maior disponibilidade de umidade.</p>
+    <div class="connection-box"><div class="k">Pense em mecanismo, não em lista</div><p>Latitude altera a <strong>entrada de energia</strong>; altitude altera <strong>pressão e temperatura</strong>; o mar altera o <strong>ritmo do aquecimento e do resfriamento</strong>; correntes redistribuem <strong>calor</strong>; albedo altera a <strong>reflexão</strong>. O clima resulta da interação.</p></div>
+  `,summaryHtml:topicMap('FATORES CLIMÁTICOS',[
+    ['Latitude','Ângulo de incidência solar altera energia por área.'],
+    ['Altitude','Pressão cai; temperatura tende a cair com a altura.'],
+    ['Maritimidade','Oceano amortece variações térmicas locais.'],
+    ['Albedo','Superfícies claras refletem mais, escuras absorvem mais.'],
+    ['Correntes','Redistribuem calor; frias ajudam a explicar costas áridas.']
+  ],'Cada fator age por um mecanismo diferente. O clima local é a interação, não a soma.'),quiz:[
+   {type:"mc",q:"Por que a proximidade do oceano tende a reduzir a amplitude térmica?",options:["Porque a água responde termicamente mais lentamente que muitas superfícies terrestres","Porque a água armazena e libera energia lentamente, amortecendo variações de temperatura","Porque a localização litorânea, por si só, determina menor recebimento de radiação","Porque a presença do oceano bloqueia a circulação atmosférica local"],correct:1,explain:"A grande capacidade térmica da água faz do oceano um reservatório que suaviza variações térmicas."},
+   {type:"mc",q:"Uma superfície clara e refletora altera principalmente qual propriedade do sistema de energia?",options:["Albedo","Umidade relativa","Pressão de vapor","Efeito de Coriolis"],correct:0,explain:"Albedo é a fração da radiação incidente refletida por uma superfície."},
+   {type:"mc",q:"Um deserto costeiro pode ser muito seco mesmo estando próximo do oceano. Qual combinação ajuda a explicar esse caso?",options:["Corrente fria e condições atmosféricas que reduzem a convecção e a formação de chuva","Maritimidade pode aumentar a umidade disponível, mas não garante precipitação","Latitude altera a distribuição média da energia solar recebida","Albedo altera a reflexão de radiação, não determina sozinho a ocorrência de chuva"],correct:0,explain:"Correntes frias podem resfriar a camada próxima à superfície e inibir convecção, contribuindo para condições áridas em conjunto com a circulação regional."},
+   {type:"open",q:"Compare latitude, albedo e maritimidade: como cada um pode alterar a temperatura por mecanismos diferentes?",model:"Latitude altera o ângulo médio de incidência solar e a energia recebida por área. Albedo altera quanto da radiação incidente é refletida. Maritimidade modifica a resposta térmica pela presença de grande massa de água, que armazena e libera energia lentamente.",terms:["latitude","albedo","maritimidade"]},
+   {type:"mc",challenge:true,q:"Duas áreas recebem radiação solar média semelhante. A primeira tem superfície escura e continental; a segunda, superfície clara e influência marítima. Qual diferença é mais plausível?",options:["A segunda tende a refletir mais energia e amortecer melhor a variação térmica","A primeira necessariamente terá mais chuva","A segunda tende a ter temperatura média menor por causa da influência marítima","As propriedades da superfície não afetam o balanço de energia"],correct:0,explain:"Superfícies com maior albedo refletem mais radiação, enquanto a influência marítima tende a reduzir a amplitude térmica."}
+  ]},
+  {id:"dinamica",title:"Dinâmica Climática",sub:"Conecte pressão, circulação, células e frentes",html:`
+    <div class="idea-box"><div class="k">Pergunta-guia</div><p>Se o clima é um sistema em movimento, <strong>como o ar se desloca e organiza?</strong> A chave está nas diferenças de pressão e na circulação em várias escalas.</p></div>
+    <h4>Ciclone e anticiclone</h4><div class="compare-grid"><div class="compare good"><div class="head">Ciclone</div><div class="line">baixa pressão relativa, convergência de ar na superfície, movimento ascendente e maior chance de nuvens e precipitação.</div></div><div class="compare"><div class="head">Anticiclone</div><div class="line">alta pressão relativa, ar descendente e circulação que tende a favorecer condições mais estáveis e secas.</div></div></div>
+    <p>A palavra “ciclone” não significa automaticamente “furacão”. Ciclone pode ser usado para sistemas de baixa pressão em diferentes contextos; <strong>ciclone tropical</strong> é um tipo específico.</p>
+    <h4>Circulação geral</h4>${svgCirculation()}<p>O aquecimento desigual da superfície ajuda a criar movimentos verticais e horizontais. Em escala planetária, esse processo participa da organização das células de Hadley, Ferrel e Polar.</p>
+    <h4>ZCIT</h4><p>A Zona de Convergência Intertropical é uma faixa onde os ventos alísios dos dois hemisférios convergem. O ar quente e úmido tende a subir nessa região, favorecendo convecção e chuva.</p>
+    <h4>Frentes</h4>${svgFronts()}<p>Frentes são zonas de transição entre massas de ar. Uma frente fria ocorre quando o ar frio avança e desloca o ar quente; uma frente quente ocorre quando o ar quente avança sobre o ar frio. A forma como o ar sobe ajuda a explicar diferenças na nebulosidade e na precipitação.</p>
+    <div class="why-box"><div class="k">Conexão forte</div><p><strong>diferença de aquecimento → diferença de pressão → movimento do ar → convergência/divergência → subida/descida → nuvens e chuva.</strong> Essa cadeia aparece novamente no El Niño e nos ciclones tropicais.</p></div>
+  `,summaryHtml:topicMap('DINÂMICA CLIMÁTICA',[
+    ['Pressão','Diferenças entre alta e baixa geram movimento do ar.'],
+    ['Ascensão','Ar que sobe esfria; pode formar nuvens e chuva.'],
+    ['Células','Hadley, Ferrel e Polar organizam a circulação geral.'],
+    ['ZCIT','Convergência dos alísios; convecção e chuva equatorial.'],
+    ['Frentes','Fria sobe brusco; quente sobe suave; chuva difere.']
+  ],'O mecanismo se repete: aquecimento desigual → pressão → vento → subida/descida → nuvens.'),quiz:[
+   {type:"mc",q:"Em um sistema de baixa pressão, qual processo favorece a formação de nuvens e chuva?",options:["Subsidência persistente e aquecimento por compressão","Convergência próxima à superfície e movimento ascendente do ar","Baixa disponibilidade de vapor d’água na atmosfera","Estabilização da coluna de ar pela redução do movimento vertical"],correct:1,explain:"A convergência pode forçar ascensão; ao subir, o ar se expande, esfria e pode atingir saturação."},
+   {type:"mc",q:"Por que a ZCIT costuma ser associada a forte nebulosidade e precipitação?",options:["Porque a convergência dos alísios cria uma faixa de ascensão do ar","Porque a convergência dos alísios favorece a subida de ar quente e úmido","Porque o ar tende a perder umidade antes de alcançar a faixa equatorial","Porque a evaporação oceânica diminui quando o ar converge sobre essa faixa"],correct:1,explain:"A convergência dos alísios favorece movimento ascendente e convecção, criando condições para nuvens e chuva."},
+   {type:"mc",q:"O que caracteriza uma frente fria?",options:["O ar quente avança sobre uma massa de ar mais fria sem deslocá-la","Uma massa de ar frio avança e força o ar mais quente a subir","Uma área de alta pressão permanece parada sobre o oceano","Um ciclone tropical atravessa uma montanha"],correct:1,explain:"Na frente fria, o ar frio avança e promove a ascensão do ar quente, podendo gerar nebulosidade e precipitação."},
+   {type:"open",q:"Construa uma cadeia causal ligando diferença de pressão, vento, movimento vertical do ar e chuva.",model:"Diferenças de pressão ajudam a gerar movimento do ar. A convergência pode forçar ascensão; ao subir, o ar esfria e pode atingir saturação, favorecendo condensação, nuvens e precipitação.",terms:["pressão","vento","ascensão","condensação"]},
+   {type:"mc",challenge:true,q:"Qual situação favorece mais a instabilidade atmosférica?",options:["Ar quente e úmido próximo à superfície com condições que favorecem sua ascensão","Ar seco descendente em um sistema estável","Ausência de gradientes de pressão e de movimento vertical","Subsidência intensa sobre toda a região"],correct:0,explain:"Ar quente e úmido próximo à superfície pode liberar energia e favorecer convecção quando o ambiente permite ascensão."}
+  ]},
+  {id:"elnino",title:"El Niño e La Niña",sub:"Veja o clima como um sistema oceano-atmosfera acoplado",html:`
+    ${svgENSO()}
+    <p>El Niño e La Niña são fases do <strong>ENSO</strong> (El Niño–Oscilação Sul), um fenômeno de grande escala que conecta o estado do oceano tropical do Pacífico com mudanças na circulação atmosférica.</p>
+    <h4>Condições próximas do normal</h4><p>Os ventos alísios normalmente empurram águas superficiais mais quentes para oeste. Perto da costa oeste da América do Sul, o processo de ressurgência ajuda a trazer águas mais frias e ricas em nutrientes para a superfície.</p>
+    <h4>El Niño</h4><p>Durante El Niño, as águas superficiais do Pacífico equatorial central e leste ficam anormalmente quentes. Isso altera os ventos, a distribuição da convecção e os padrões de chuva.</p>
+    <h4>La Niña</h4><p>La Niña é a fase fria: o Pacífico equatorial central e leste fica anormalmente mais frio, enquanto a circulação de ventos e a ressurgência se fortalecem.</p>
+    <div class="callout-quote">O ponto central não é “El Niño = quente”. É: <strong>mudou a temperatura do oceano → mudou a atmosfera → mudaram circulação, chuva e temperatura em regiões distantes.</strong></div>
+    <div class="connection-box"><div class="k">Brasil: cuidado com respostas automáticas</div><p>Existem padrões típicos para várias regiões do Brasil, mas eles são <strong>tendências</strong>, não uma regra mecânica para cada cidade e cada episódio. A resposta local depende da época do ano, da região e da interação com outros sistemas atmosféricos.</p></div>
+  `,summaryHtml:topicMap('ENSO',[
+    ['Normal','Alísios empurram água quente para oeste; ressurgência ativa.'],
+    ['El Niño','Alísios enfraquecem; água quente avança para leste.'],
+    ['La Niña','Alísios se fortalecem; ressurgência reforçada a leste.'],
+    ['Teleconexão','Mudanças no Pacífico reorganizam chuva e temperatura distantes.']
+  ],'Compare sempre três coisas: posição da água quente, força dos alísios e intensidade da ressurgência.'),quiz:[
+   {type:"mc",q:"O que caracteriza o El Niño no Pacífico equatorial?",options:["Resfriamento anômalo persistente das águas centrais e orientais","Aquecimento anômalo das águas do Pacífico equatorial central e leste, acompanhado de mudanças atmosféricas","Aquecimento amplo dos oceanos sem um padrão específico no Pacífico equatorial","Uma anomalia térmica restrita ao Atlântico sem resposta característica no Pacífico equatorial"],correct:1,explain:"El Niño é uma fase do ENSO marcada por aquecimento anômalo no Pacífico equatorial central e leste e mudanças acopladas na atmosfera."},
+   {type:"mc",q:"Por que uma anomalia no Pacífico pode afetar chuva em regiões distantes?",options:["Porque a água percorre fisicamente o planeta em poucos dias","Porque alterações no acoplamento oceano-atmosfera reorganizam convecção, ventos e circulação em grande escala","Porque toda chuva mundial nasce no Pacífico","Porque o relevo deixa de influenciar o clima"],correct:1,explain:"O ENSO altera padrões de circulação atmosférica e distribuição de convecção, produzindo teleconexões climáticas."},
+   {type:"mc",q:"Qual relação entre El Niño e La Niña está correta?",options:["São duas formas de descrever a mesma anomalia do Pacífico em momentos diferentes","São fases opostas de um sistema de variabilidade oceano-atmosférica chamado ENSO","Uma é definida pela estação do ano e a outra por sua duração","Uma se refere ao oceano e a outra principalmente à atmosfera"],correct:1,explain:"El Niño e La Niña são fases quentes e frias, respectivamente, de um fenômeno acoplado do Pacífico."},
+   {type:"open",q:"Explique por que os efeitos do El Niño no Brasil não são iguais em todas as regiões.",model:"As respostas dependem da circulação atmosférica, da posição e intensidade das anomalias no Pacífico e das condições regionais, como relevo e disponibilidade de umidade. Por isso, o sinal de chuva e temperatura pode variar entre regiões.",terms:["teleconexão","circulação","variabilidade regional"]},
+   {type:"mc",challenge:true,q:"Imagine que o Pacífico equatorial apresenta uma anomalia quente. Qual evidência reforçaria a interpretação de um episódio de ENSO em vez de uma oscilação local isolada?",options:["Uma única medição costeira","Mudanças coerentes de temperatura oceânica junto com respostas atmosféricas características e persistência espacial e temporal","Um único dia de chuva em uma cidade","Uma mudança de temperatura no Atlântico sem relação atmosférica"],correct:1,explain:"O ENSO é um fenômeno acoplado: a interpretação depende da relação entre anomalias oceânicas e atmosféricas e de sua persistência."}
+  ]},
+  {id:"ciclones",title:"Ciclones Tropicais",sub:"Entenda a retroalimentação entre oceano quente e atmosfera",html:`
+    ${svgTropicalCyclone()}
+    <p>Um <strong>ciclone tropical</strong> é um sistema organizado de baixa pressão que se desenvolve em ambiente tropical e utiliza energia do oceano quente. “Furacão” e “tufão” são nomes regionais usados para ciclones tropicais que atingem determinada intensidade em diferentes bacias.</p>
+    <h4>O mecanismo</h4><p>Água quente fornece energia por evaporação. O vapor sobe, condensa e libera calor latente. Esse aquecimento sustenta convecção, ajuda a aprofundar a circulação e reforça a organização do sistema.</p>
+    <p>A temperatura do oceano é importante, mas <strong>não é suficiente sozinha</strong>. Um ambiente favorável também envolve umidade, pouca variação vertical dos ventos, uma perturbação inicial e distância suficiente do Equador para que o efeito de Coriolis contribua para a organização da circulação. Uma referência comum é água do mar em torno de <strong>26,5 °C ou mais</strong>, em profundidade suficiente.</p>
+    <h4>Tornado e ciclone tropical não são a mesma coisa</h4><div class="compare-grid"><div class="compare"><div class="head">Ciclone tropical</div><div class="line">sistema de grande escala, alimentado principalmente pelo calor do oceano, com duração que pode se estender por vários dias.</div></div><div class="compare"><div class="head">Tornado</div><div class="line">coluna de ar em rotação muito menor e de duração geralmente muito mais curta, associada a tempestades severas.</div></div></div>
+    <div class="warning-box"><div class="k">Erro comum</div><p>“Água a 26 °C = vai formar furacão” está errado. Temperatura do mar é uma condição importante, não um gatilho único.</p></div>
+  `,summaryHtml:topicMap('CICLONES TROPICAIS',[
+    ['Fonte','Oceano quente fornece vapor por evaporação.'],
+    ['Conversão','Condensação libera calor latente e sustenta convecção.'],
+    ['Organização','Baixa pressão + Coriolis organizam a circulação.'],
+    ['Condições','Umidade, cisalhamento fraco e perturbação inicial também importam.']
+  ],'Temperatura do oceano é necessária, mas não suficiente. O sistema exige ambiente favorável.'),quiz:[
+   {type:"mc",q:"Qual cadeia representa melhor uma parte importante da intensificação de um ciclone tropical?",options:["Água quente → evaporação → ascensão/condensação → liberação de calor → manutenção da convecção","Água fria → menor evaporação → fortalecimento automático","Solo seco → ausência de vapor → intensificação","Alta pressão → subsidência → convecção crescente"],correct:0,explain:"O oceano quente favorece evaporação; a condensação do vapor libera calor latente que ajuda a sustentar a convecção e a circulação."},
+   {type:"mc",q:"Por que água do mar próxima de 26,5 °C não garante a formação de um ciclone tropical?",options:["Porque a temperatura oceânica não participa do processo","Porque são necessárias também condições atmosféricas, perturbação inicial e ambiente favorável à organização da circulação","Porque a superfície terrestre oferece as mesmas condições energéticas do oceano","Porque maior disponibilidade de vapor tende a limitar a formação de convecção"],correct:1,explain:"Temperatura do oceano é uma condição importante, mas não suficiente. Umidade, cisalhamento, perturbação e Coriolis também importam."},
+   {type:"mc",q:"Por que um ciclone tropical tende a não se organizar exatamente sobre o Equador?",options:["Porque o Equador apresenta pouca rotação aparente para organizar a circulação","Porque o efeito de Coriolis é muito fraco perto do Equador para organizar a rotação do sistema","Porque o ar ascendente encontra condições insuficientes para formar nuvens","Porque as águas equatoriais têm pouca energia disponível para a convecção"],correct:1,explain:"A rotação da Terra contribui para organizar a circulação ciclônica, mas o parâmetro de Coriolis é muito pequeno próximo ao Equador."},
+   {type:"open",q:"Diferencie ciclone tropical e tornado usando escala, duração e fonte de energia, sem reduzir a resposta ao tamanho.",model:"Ciclones tropicais são sistemas de grande escala, que podem durar vários dias e obtêm energia principalmente do oceano quente e da convecção organizada. Tornados são fenômenos muito menores e geralmente curtos, ligados a tempestades severas e a uma dinâmica distinta.",terms:["escala","duração","energia"]},
+   {type:"mc",challenge:true,q:"Dois sistemas estão sobre oceanos igualmente quentes. Um possui forte cisalhamento vertical dos ventos; o outro, cisalhamento fraco. Qual tem ambiente mais favorável à organização de um ciclone tropical?",options:["O de forte cisalhamento, porque favorece a renovação do ar no núcleo","O de cisalhamento fraco, porque a circulação pode permanecer mais organizada verticalmente","Os dois têm condições semelhantes porque o cisalhamento não altera a organização da convecção","A temperatura do oceano é uma condição importante, mas a organização também depende das condições atmosféricas"],correct:1,explain:"Cisalhamento vertical forte pode desorganizar a convecção e a circulação; ambiente com cisalhamento fraco é mais favorável."}
+  ]},
+  {id:"mudancas",title:"Mudanças Climáticas",sub:"Conecte balanço de energia, ação humana e riscos",html:`
+    ${svgGreenhouse()}${svgClimateChangeChain()}
+    <p>O efeito estufa natural faz parte do funcionamento térmico do planeta. O problema atual é o <strong>aumento da concentração de gases de efeito estufa devido principalmente a atividades humanas</strong>, alterando o balanço de energia da Terra.</p>
+    <h4>De onde vem o aumento?</h4><ul><li>queima de carvão, petróleo e gás;</li><li>mudanças no uso da terra e desmatamento;</li><li>agropecuária e outras fontes de metano e óxido nitroso;</li><li>processos industriais e manejo de resíduos.</li></ul>
+    <h4>O que muda?</h4><p>O aquecimento do sistema climático altera médias e distribuições de temperatura, disponibilidade de água, gelo, nível do mar e o risco de alguns extremos. O efeito não é idêntico em todos os lugares: vulnerabilidade e impactos dependem da região e das características sociais e ambientais.</p>
+    <h4>Por que eventos extremos precisam de contexto?</h4><p>Um evento específico resulta da combinação de circulação atmosférica, oceano, relevo, uso da terra e outras condições. A mudança climática pode alterar o pano de fundo que influencia frequência ou intensidade de alguns extremos, mas não significa que cada evento extremo tenha uma causa única.</p>
+    <h4>Política climática</h4><p>O <strong>Protocolo de Kyoto</strong> estabeleceu metas de redução para países desenvolvidos dentro de um sistema internacional específico. O <strong>Acordo de Paris</strong> de 2015 organizou compromissos nacionais chamados NDCs e estabeleceu o objetivo de manter o aquecimento global bem abaixo de 2 °C e perseguir esforços para limitá-lo a 1,5 °C.</p>
+    <div class="why-box"><div class="k">Conexão com tudo que veio antes</div><p>Latitude, altitude, circulação, oceano, umidade, correntes e balanço de energia continuam presentes. A diferença é que agora estamos alterando <strong>forçantes do sistema climático</strong>, especialmente a composição atmosférica.</p></div>
+  `,summaryHtml:topicMap('MUDANÇAS CLIMÁTICAS',[
+    ['Emissões','Queima de fósseis, uso da terra, agropecuária, indústria.'],
+    ['Concentração','GEE aumentam e alteram a composição atmosférica.'],
+    ['Balanço','Absorção e reemissão de infravermelho mudam.'],
+    ['Resposta','Médias, extremos, gelo, nível do mar e risco se alteram.']
+  ],'A cadeia separa causa, mecanismo físico e resposta. Impactos variam por região.'),quiz:[
+   {type:"mc",q:"Qual cadeia explica melhor o aquecimento global antropogênico?",options:["Atividades humanas → aumento de gases de efeito estufa → alteração do balanço de energia → aquecimento do sistema","Mais chuva → menos CO₂ → aquecimento direto","Mais vento → menos vapor → aquecimento","Menos radiação recebida → maior retenção de energia"],correct:0,explain:"O aumento antropogênico de gases de efeito estufa altera o balanço energético do sistema climático e produz aquecimento."},
+   {type:"mc",q:"Por que o efeito estufa natural não deve ser tratado como sinônimo de mudança climática antropogênica?",options:["Porque o efeito estufa natural não existe","Porque o efeito estufa natural faz parte do equilíbrio térmico da Terra; a atividade humana intensifica a concentração de gases de efeito estufa","Porque CO₂ não interage com radiação infravermelha","Porque o clima não possui balanço energético"],correct:1,explain:"O efeito estufa natural é necessário. A questão atual é a intensificação do efeito associada ao aumento antropogênico de gases de efeito estufa."},
+   {type:"mc",q:"Por que um evento extremo isolado não deve ser atribuído automaticamente à mudança climática?",options:["Porque um único extremo é influenciado por condições do tempo e não permite, sozinho, atribuir uma causa climática","Porque cada evento resulta de condições locais e circulação, enquanto a mudança climática altera probabilidades e contextos de risco","Porque eventos extremos não podem ser comparados entre diferentes períodos","Porque a temperatura média é a única variável necessária para explicar extremos"],correct:1,explain:"A atribuição de extremos considera o contexto físico e estatístico; mudança climática pode alterar a probabilidade ou intensidade de alguns eventos sem ser uma causa única automática."},
+   {type:"open",q:"Conecte atividade humana, gases de efeito estufa, balanço de energia e aquecimento em uma única explicação causal.",model:"Atividades humanas aumentam a concentração de gases de efeito estufa na atmosfera. Esses gases absorvem e reemitem parte da radiação infravermelha, alterando o balanço de energia do sistema e contribuindo para o aquecimento global.",terms:["GEE","balanço de energia","aquecimento"]},
+   {type:"mc",challenge:true,q:"Uma região aquece, mas o efeito sobre chuva e extremos não é igual ao de outra região. Qual explicação é mais coerente?",options:["Os lugares respondem de forma semelhante, independentemente das condições regionais","A resposta regional depende da circulação, oceano, relevo, disponibilidade de água e vulnerabilidades locais","A latitude passa a ter papel desprezível quando a temperatura global aumenta","A mudança climática altera principalmente a temperatura, com pouca influência sobre outros componentes"],correct:1,explain:"O aquecimento global atua sobre um sistema climático heterogêneo; processos físicos e condições locais modulam os impactos regionais."}
+  ]}
+ ],
+ questions:[
+  {type:"mc",title:"Tempo e clima",q:"Uma estação registra 34 °C e chuva intensa em uma tarde. Qual conclusão é mais defensável?",options:["O clima da cidade é definido por essa tarde","Isso descreve o tempo; para caracterizar o clima é preciso analisar séries e padrões","A chuva prova uma mudança climática","A temperatura deixa de ser uma variável climática"],correct:1,explain:"A observação é pontual. Clima é caracterizado por padrões e variabilidade em escalas de tempo longas."},
+  {type:"mc",challenge:true,q:"Uma cidade teve três anos seguidos acima da média histórica. Qual análise seria mais adequada antes de afirmar uma mudança permanente?",options:["Comparar os dados com poucos anos recentes","Examinar uma série mais longa, a variabilidade e outros indicadores climáticos","Considerar os anos sem verificar a variabilidade e o período de referência","Usar o recorde de temperatura como principal evidência"],correct:1,explain:"Períodos curtos podem conter variabilidade natural. A avaliação climática precisa de contexto temporal e estatístico."},
+  {type:"open",q:"Explique, em poucas frases, por que previsão do tempo e climatologia respondem perguntas diferentes.",model:"A previsão do tempo busca estimar o estado atmosférico em uma escala curta. A climatologia analisa padrões, médias, variabilidade e extremos ao longo de períodos longos.",terms:["tempo","clima","escala temporal"]},
+  {type:"mc",q:"Duas cidades têm a mesma temperatura média anual, mas uma possui verões e invernos muito mais contrastantes. Qual medida ajuda diretamente a perceber essa diferença?",options:["Amplitude térmica","Pressão atmosférica média","Latitude absoluta","Precipitação anual isolada"],correct:0,explain:"A amplitude térmica evidencia a diferença entre valores de temperatura em um período e pode revelar contrastes que a média esconde."},
+  {type:"mc",q:"Depois que ar úmido sobe ao encontrar uma serra, ocorre resfriamento e formação de nuvens. Que mecanismo de precipitação está mais diretamente envolvido?",options:["Convectivo","Orográfico","Frontal","Associado principalmente à presença de um sistema de baixa pressão"],correct:1,explain:"Na chuva orográfica, o relevo força a ascensão do ar, favorecendo resfriamento, condensação e precipitação."},
+  {type:"open",q:"Compare chuva frontal, orográfica e convectiva pelo processo que força o ar a subir.",model:"Na frontal, a ascensão ocorre pela interação entre massas de ar de características diferentes. Na orográfica, o relevo força a subida. Na convectiva, o aquecimento da superfície gera ar mais quente e ascendente.",terms:["frontal","orográfica","convectiva"]},
+  {type:"mc",q:"Em qual camada ocorrem a maior parte das nuvens, chuvas e outros fenômenos meteorológicos próximos à superfície?",options:["Estratosfera","Troposfera","Mesosfera","Exosfera"],correct:1,explain:"A troposfera é a camada inferior e concentra a maior parte da massa atmosférica e do vapor d’água relevante ao tempo meteorológico."},
+  {type:"mc",q:"Qual sequência apresenta as camadas principais da atmosfera a partir da superfície?",options:["Troposfera, estratosfera, mesosfera, termosfera, exosfera","Estratosfera, troposfera, termosfera, mesosfera, exosfera","Troposfera, mesosfera, estratosfera, exosfera, termosfera","Exosfera, termosfera, mesosfera, estratosfera, troposfera"],correct:0,explain:"A ordem convencional é troposfera, estratosfera, mesosfera, termosfera e exosfera."},
+  {type:"mc",challenge:true,q:"Por que conhecer a estrutura vertical da atmosfera ajuda na climatologia?",options:["Porque tratar a atmosfera como um conjunto uniforme dificulta localizar processos","Porque permite relacionar processos e propriedades à altitude em vez de tratar a atmosfera como uma camada uniforme","Porque as camadas mais externas concentrariam os principais processos climáticos","Porque a altitude exerce pouca influência sobre as propriedades da atmosfera"],correct:1,explain:"Temperatura, composição e processos variam com a altitude; distinguir as camadas evita generalizações incorretas."},
+  {type:"mc",q:"Por que a proximidade do oceano tende a reduzir a amplitude térmica?",options:["Porque a água responde termicamente mais lentamente que muitas superfícies terrestres","Porque a água armazena e libera energia lentamente, amortecendo variações de temperatura","Porque a localização litorânea, por si só, determina menor recebimento de radiação","Porque a presença do oceano bloqueia a circulação atmosférica local"],correct:1,explain:"A grande capacidade térmica da água faz do oceano um reservatório que suaviza variações térmicas."},
+  {type:"mc",q:"Um deserto costeiro pode ser muito seco mesmo estando próximo do oceano. Qual combinação ajuda a explicar esse caso?",options:["Corrente fria e condições atmosféricas que reduzem a convecção e a formação de chuva","Maritimidade pode aumentar a umidade disponível, mas não garante precipitação","Latitude altera a distribuição média da energia solar recebida","Albedo altera a reflexão de radiação, não determina sozinho a ocorrência de chuva"],correct:0,explain:"Correntes frias podem resfriar a camada próxima à superfície e inibir convecção, contribuindo para condições áridas em conjunto com a circulação regional."},
+  {type:"open",q:"Compare latitude, albedo e maritimidade: como cada um pode alterar a temperatura por mecanismos diferentes?",model:"Latitude altera o ângulo médio de incidência solar e a energia recebida por área. Albedo altera quanto da radiação incidente é refletida. Maritimidade modifica a resposta térmica pela presença de grande massa de água, que armazena e libera energia lentamente.",terms:["latitude","albedo","maritimidade"]},
+  {type:"mc",q:"Em um sistema de baixa pressão, qual processo favorece a formação de nuvens e chuva?",options:["Subsidência persistente e aquecimento por compressão","Convergência próxima à superfície e movimento ascendente do ar","Baixa disponibilidade de vapor d’água na atmosfera","Estabilização da coluna de ar pela redução do movimento vertical"],correct:1,explain:"A convergência pode forçar ascensão; ao subir, o ar se expande, esfria e pode atingir saturação."},
+  {type:"mc",q:"O que caracteriza uma frente fria?",options:["O ar quente avança sobre uma massa de ar mais fria sem deslocá-la","Uma massa de ar frio avança e força o ar mais quente a subir","Uma área de alta pressão permanece parada sobre o oceano","Um ciclone tropical atravessa uma montanha"],correct:1,explain:"Na frente fria, o ar frio avança e promove a ascensão do ar quente, podendo gerar nebulosidade e precipitação."},
+  {type:"open",q:"Construa uma cadeia causal ligando diferença de pressão, vento, movimento vertical do ar e chuva.",model:"Diferenças de pressão ajudam a gerar movimento do ar. A convergência pode forçar ascensão; ao subir, o ar esfria e pode atingir saturação, favorecendo condensação, nuvens e precipitação.",terms:["pressão","vento","ascensão","condensação"]},
+  {type:"mc",q:"O que caracteriza o El Niño no Pacífico equatorial?",options:["Resfriamento anômalo persistente das águas centrais e orientais","Aquecimento anômalo das águas do Pacífico equatorial central e leste, acompanhado de mudanças atmosféricas","Aquecimento amplo dos oceanos sem um padrão específico no Pacífico equatorial","Uma anomalia térmica restrita ao Atlântico sem resposta característica no Pacífico equatorial"],correct:1,explain:"El Niño é uma fase do ENSO marcada por aquecimento anômalo no Pacífico equatorial central e leste e mudanças acopladas na atmosfera."},
+  {type:"mc",q:"Qual relação entre El Niño e La Niña está correta?",options:["São duas formas de descrever a mesma anomalia do Pacífico em momentos diferentes","São fases opostas de um sistema de variabilidade oceano-atmosférica chamado ENSO","Uma é definida pela estação do ano e a outra por sua duração","Uma se refere ao oceano e a outra principalmente à atmosfera"],correct:1,explain:"El Niño e La Niña são fases quentes e frias, respectivamente, de um fenômeno acoplado do Pacífico."},
+  {type:"open",q:"Explique por que os efeitos do El Niño no Brasil não são iguais em todas as regiões.",model:"As respostas dependem da circulação atmosférica, da posição e intensidade das anomalias no Pacífico e das condições regionais, como relevo e disponibilidade de umidade. Por isso, o sinal de chuva e temperatura pode variar entre regiões.",terms:["teleconexão","circulação","variabilidade regional"]},
+  {type:"mc",q:"Qual cadeia representa melhor uma parte importante da intensificação de um ciclone tropical?",options:["Água quente → evaporação → ascensão/condensação → liberação de calor → manutenção da convecção","Água fria → menor evaporação → fortalecimento automático","Solo seco → ausência de vapor → intensificação","Alta pressão → subsidência → convecção crescente"],correct:0,explain:"O oceano quente favorece evaporação; a condensação do vapor libera calor latente que ajuda a sustentar a convecção e a circulação."},
+  {type:"mc",q:"Por que um ciclone tropical tende a não se organizar exatamente sobre o Equador?",options:["Porque o Equador apresenta pouca rotação aparente para organizar a circulação","Porque o efeito de Coriolis é muito fraco perto do Equador para organizar a rotação do sistema","Porque o ar ascendente encontra condições insuficientes para formar nuvens","Porque as águas equatoriais têm pouca energia disponível para a convecção"],correct:1,explain:"A rotação da Terra contribui para organizar a circulação ciclônica, mas o parâmetro de Coriolis é muito pequeno próximo ao Equador."},
+  {type:"open",q:"Diferencie ciclone tropical e tornado usando escala, duração e fonte de energia, sem reduzir a resposta ao tamanho.",model:"Ciclones tropicais são sistemas de grande escala, que podem durar vários dias e obtêm energia principalmente do oceano quente e da convecção organizada. Tornados são fenômenos muito menores e geralmente curtos, ligados a tempestades severas e a uma dinâmica distinta.",terms:["escala","duração","energia"]},
+  {type:"mc",q:"Qual cadeia explica melhor o aquecimento global antropogênico?",options:["Atividades humanas → aumento de gases de efeito estufa → alteração do balanço de energia → aquecimento do sistema","Mais chuva → menos CO₂ → aquecimento direto","Mais vento → menos vapor → aquecimento","Menos radiação recebida → maior retenção de energia"],correct:0,explain:"O aumento antropogênico de gases de efeito estufa altera o balanço energético do sistema climático e produz aquecimento."},
+  {type:"mc",q:"Por que um evento extremo isolado não deve ser atribuído automaticamente à mudança climática?",options:["Porque um único extremo é influenciado por condições do tempo e não permite, sozinho, atribuir uma causa climática","Porque cada evento resulta de condições locais e circulação, enquanto a mudança climática altera probabilidades e contextos de risco","Porque eventos extremos não podem ser comparados entre diferentes períodos","Porque a temperatura média é a única variável necessária para explicar extremos"],correct:1,explain:"A atribuição de extremos considera o contexto físico e estatístico; mudança climática pode alterar a probabilidade ou intensidade de alguns eventos sem ser uma causa única automática."},
+  {type:"open",q:"Conecte atividade humana, gases de efeito estufa, balanço de energia e aquecimento em uma única explicação causal.",model:"Atividades humanas aumentam a concentração de gases de efeito estufa na atmosfera. Esses gases absorvem e reemitem parte da radiação infravermelha, alterando o balanço de energia do sistema e contribuindo para o aquecimento global.",terms:["GEE","balanço de energia","aquecimento"]}
+ ],
+ flashcards:[
+  {id:"fc0",diff:"facil",front:"Qual diferença essencial existe entre tempo e clima?",back:"Tempo é o estado momentâneo da atmosfera; clima é a descrição estatística dos padrões e da variabilidade desse tempo em longo prazo."},
+  {id:"fc1",diff:"medio",front:"Por que a média anual não basta para comparar dois climas?",back:"Porque médias semelhantes podem esconder amplitudes térmicas, sazonalidades e frequências de extremos diferentes."},
+  {id:"fc2",diff:"medio",front:"O que distingue chuva orográfica de chuva convectiva?",back:"Na orográfica, o relevo força a subida do ar. Na convectiva, o aquecimento da superfície favorece a subida do ar quente."},
+  {id:"fc3",diff:"medio",front:"Como diferenças de pressão ajudam a gerar vento?",back:"Elas produzem um gradiente de pressão que impulsiona o movimento do ar; a rotação da Terra e o relevo alteram a trajetória real."},
+  {id:"fc4",diff:"dificil",front:"Quais são as cinco camadas principais da atmosfera?",back:"Troposfera, estratosfera, mesosfera, termosfera e exosfera."},
+  {id:"fc5",diff:"medio",front:"Por que o ozônio é associado à estratosfera?",back:"Porque a maior parte do ozônio atmosférico está concentrada na estratosfera, onde absorve parte da radiação ultravioleta."},
+  {id:"fc6",diff:"dificil",front:"Por que a maritimidade tende a reduzir a amplitude térmica?",back:"A água armazena e libera calor lentamente, amortecendo variações de temperatura em comparação com superfícies continentais."},
+  {id:"fc7",diff:"dificil",front:"Como o ENSO conecta oceano e atmosfera?",back:"Anomalias de temperatura no Pacífico alteram ventos, convecção e pressão, reorganizando padrões de circulação e precipitação."},
+  {id:"fc8",diff:"dificil",front:"Por que água quente sozinha não cria um ciclone tropical?",back:"Porque também são necessários ambiente atmosférico adequado, umidade, pouca variação vertical dos ventos, perturbação inicial e efeito de Coriolis."},
+  {id:"fc9",diff:"dificil",front:"Qual é a diferença entre efeito estufa natural e intensificação antrópica?",back:"O efeito estufa natural ajuda a manter o planeta habitável; o aumento antropogênico dos gases de efeito estufa reforça a retenção de energia e aquece o sistema."}
+ ],
+ keywords:[
+  {id:"kw0",term:"Amplitude térmica",def:"Diferença entre dois valores de temperatura, como máxima e mínima em um período."},
+  {id:"kw1",term:"Umidade relativa",def:"Razão percentual entre o vapor presente e a quantidade máxima que o ar pode conter naquela temperatura."},
+  {id:"kw2",term:"Chuva orográfica",def:"Precipitação favorecida pela subida do ar ao encontrar uma barreira de relevo."},
+  {id:"kw3",term:"Chuva convectiva",def:"Precipitação associada à subida de ar aquecido, com forte movimento convectivo."},
+  {id:"kw4",term:"Maritimidade",def:"Influência do oceano que tende a amortecer variações de temperatura e modificar a umidade costeira."},
+  {id:"kw5",term:"Continentalidade",def:"Influência reduzida do oceano; áreas interiores tendem a apresentar maior amplitude térmica."},
+  {id:"kw6",term:"Troposfera",def:"Camada inferior da atmosfera, diretamente ligada ao tempo meteorológico."},
+  {id:"kw7",term:"Estratosfera",def:"Camada acima da troposfera que concentra a maior parte do ozônio atmosférico."},
+  {id:"kw8",term:"Albedo",def:"Fração da radiação incidente que uma superfície reflete."},
+  {id:"kw9",term:"Efeito estufa",def:"Processo no qual gases atmosféricos absorvem e reemitem parte da radiação infravermelha terrestre."},
+  {id:"kw10",term:"Corrente de Humboldt",def:"Corrente fria associada à costa oeste da América do Sul, influenciando temperatura, umidade e produtividade marinha."},
+  {id:"kw11",term:"Ciclone",def:"Sistema de baixa pressão; não é sinônimo automático de ciclone tropical."},
+  {id:"kw12",term:"Anticiclone",def:"Sistema de alta pressão, geralmente associado a subsidência e maior estabilidade do tempo."},
+  {id:"kw13",term:"Célula de Hadley",def:"Circulação tropical de grande escala ligada ao aquecimento diferencial e ao transporte de energia entre baixas latitudes."},
+  {id:"kw14",term:"ZCIT",def:"Faixa de convergência dos alísios perto do Equador, associada a forte convecção."},
+  {id:"kw15",term:"ENSO",def:"Sistema oceano-atmosfera do Pacífico que inclui as fases El Niño e La Niña."},
+  {id:"kw16",term:"El Niño",def:"Fase quente do ENSO, com águas anormalmente quentes no Pacífico equatorial central e leste."},
+  {id:"kw17",term:"La Niña",def:"Fase fria do ENSO, com águas anormalmente frias no Pacífico equatorial central e leste."},
+  {id:"kw18",term:"Ciclone tropical",def:"Sistema tropical de baixa pressão alimentado pelo calor do oceano e dependente de condições atmosféricas favoráveis."},
+  {id:"kw19",term:"Gases de efeito estufa",def:"Gases que absorvem parte da radiação infravermelha emitida pela superfície e pela atmosfera."},
+  {id:"kw20",term:"Acordo de Paris",def:"Acordo internacional de 2015 que organiza metas nacionais e busca manter o aquecimento bem abaixo de 2 °C, perseguindo 1,5 °C."}
+ ]
+}];
+
+const EUROPA_MEDIEVAL={
+ id:"europa-medieval",name:"Europa Medieval",discipline:"História",tag:"História · matéria",icon:ICON.book,
+ learningGoal:"Entender como poder, terra, religião, trabalho e comércio se reorganizaram na Europa medieval.",
+ topics:[
+  {id:"em-formacao",title:"Formação da Europa Medieval",sub:"Como o mundo europeu se reorganizou após o fim do Império Romano do Ocidente",html:`
+   <div class="idea-box"><div class="k">Ideia central</div><p>A Europa medieval não surgiu de uma única mudança. Entre a Antiguidade tardia e os séculos seguintes, houve fragmentação política, transformações econômicas, migrações e permanências culturais.</p></div>
+   <p>Com o enfraquecimento do poder romano no Ocidente, diferentes povos e reinos passaram a disputar territórios. Ao mesmo tempo, instituições herdadas do mundo romano permaneceram e foram reinterpretadas.</p>
+   <h4>Três processos para guardar</h4><div class="concept-grid"><div class="concept"><div class="t">Fragmentação política</div><div class="d">O poder passou a ser exercido por diversos reinos e autoridades locais.</div></div><div class="concept"><div class="t">Cristianização</div><div class="d">O cristianismo se consolidou como uma instituição central da sociedade europeia.</div></div><div class="concept"><div class="t">Ruralização</div><div class="d">A vida econômica e social tornou-se fortemente ligada ao campo em grande parte da Europa ocidental.</div></div></div>
+  `,summaryHtml:topicMap('FORMAÇÃO DA EUROPA MEDIEVAL',[
+    ['Herança romana','Instituições e cultura romanas sobrevivem parcialmente.'],
+    ['Fragmentação','O poder se distribui entre reinos e autoridades locais.'],
+    ['Cristianização','A Igreja se consolida como instituição central.'],
+    ['Ruralização','A vida econômica e social passa a girar em torno do campo.']
+  ],'A transição combina mudança e continuidade — não é ruptura instantânea.'),quiz:[{type:"mc",q:"Qual interpretação melhor evita imaginar a passagem para a Idade Média como uma ruptura instantânea?",options:["Reconhecer continuidades romanas junto a novas estruturas políticas e sociais","Tratar a passagem como uma ruptura política sem continuidade institucional","Explicar a transformação europeia principalmente pela economia rural","Tratar os reinos medievais como simples cópias do Império Romano"],correct:0,explain:"A transição envolveu mudanças e continuidades. Estruturas romanas, cristianismo e novos poderes coexistiram e foram transformados."},{type:"mc",q:"Por que a cristianização é importante para entender a Europa medieval?",options:["Porque a religião ficou restrita a pequenos grupos urbanos","Porque a Igreja se tornou uma instituição com influência social, cultural e política ampla","Porque reduzir conflitos medievais à religião apaga disputas sociais e políticas","Porque o cristianismo eliminou completamente tradições anteriores"],correct:1,explain:"A Igreja passou a exercer influência sobre cultura, educação, organização social e legitimidade política, embora a sociedade medieval continuasse diversa."},{type:"open",q:"Explique por que a formação da Europa medieval pode ser entendida como um processo de transformação e continuidade.",model:"A reorganização europeia combinou a fragmentação do poder romano ocidental com a formação de novos reinos, a expansão do cristianismo e mudanças econômicas e sociais, enquanto parte do legado romano permaneceu.",terms:["continuidade","fragmentação","cristianização"]}]},
+  {id:"em-feudalismo",title:"Feudalismo e relações de poder",sub:"Terra, vínculos pessoais e autoridade em uma sociedade descentralizada",html:`
+   <p>O termo <strong>feudalismo</strong> é uma ferramenta de interpretação para descrever certas relações de poder da Europa medieval, sobretudo vínculos entre senhores e vassalos, envolvendo serviços e concessão de feudos. Não se trata de um sistema único e idêntico em toda a Europa.</p>
+   <div class="compare-grid"><div class="compare"><div class="head">Senhor</div><div class="line">Concede proteção e, em determinados contextos, um feudo; recebe obrigações e serviços.</div></div><div class="compare"><div class="head">Vassalo</div><div class="line">Assume obrigações de fidelidade e serviço dentro de um vínculo pessoal de dependência.</div></div></div>
+   <h4>Feudo não é sinônimo de propriedade moderna</h4><p>O conceito está ligado a um conjunto de direitos, usos e relações de poder. A autoridade política medieval era compartilhada entre diferentes centros.</p>
+  `,summaryHtml:topicMap('FEUDALISMO',[
+    ['Vínculo pessoal','Fidelidade e serviço entre membros da elite.'],
+    ['Feudo','Concessão ligada a direitos e obrigações, não à propriedade moderna.'],
+    ['Senhor','Concede proteção e, em certos casos, um feudo.'],
+    ['Vassalo','Assume obrigações de fidelidade e serviço.']
+  ],'O termo descreve relações variáveis no tempo e no espaço; não é um sistema uniforme.'),quiz:[{type:"mc",q:"Qual relação melhor representa a lógica senhor-vassalo?",options:["Um contrato de trabalho assalariado entre camponês e Estado","Um vínculo pessoal de fidelidade e serviço associado à concessão de um feudo","Uma relação comercial ligada principalmente à circulação de mercadorias","Uma obrigação religiosa sem relação com poder e guerra"],correct:1,explain:"A relação senhor-vassalo era pessoal e política, envolvendo fidelidade e serviços, associada em certos casos à concessão de um feudo."},{type:"mc",q:"Por que é problemático tratar o feudalismo como um modelo idêntico em toda a Europa?",options:["Porque as estruturas sociais e políticas variavam no tempo e entre regiões","Porque nenhuma relação de dependência existia na Europa medieval","Porque atribuir toda a autoridade ao rei simplifica demais a política medieval","Porque feudo e senhorio eram exatamente a mesma instituição"],correct:0,explain:"A organização política e social variou bastante entre regiões e períodos; o conceito precisa ser usado com cuidado."},{type:"open",q:"Diferencie, em poucas linhas, uma relação senhor-vassalo de uma relação senhorio-camponês.",model:"Senhor-vassalo é um vínculo político e pessoal entre membros da elite, ligado a fidelidade e serviços. Senhorio-camponês envolve a organização da exploração rural e obrigações de camponeses perante o senhorio.",terms:["vassalagem","senhorio","obrigações"]}]},
+  {id:"em-sociedade",title:"Sociedade e vida rural",sub:"Como o trabalho no campo sustentava grande parte da sociedade",html:`
+   <div class="concept-grid"><div class="concept"><div class="t">Senhorio</div><div class="d">Unidade de organização econômica e social centrada na exploração rural.</div></div><div class="concept"><div class="t">Servidão</div><div class="d">Condição de dependência camponesa, com obrigações ligadas à terra e ao senhorio.</div></div><div class="concept"><div class="t">Produção</div><div class="d">A agricultura era a base da subsistência e do abastecimento de grande parte da população.</div></div><div class="concept"><div class="t">Comunidades</div><div class="d">Famílias e aldeias organizavam trabalho, usos da terra e formas de cooperação local.</div></div></div>
+   <p>É importante separar <strong>feudalismo</strong> de <strong>senhorio</strong>. Feudalismo é usado sobretudo para relações de poder entre elites; senhorio descreve melhor a organização do domínio rural e das obrigações econômicas.</p>
+  `,summaryHtml:topicMap('SOCIEDADE E VIDA RURAL',[
+    ['Senhorio','Unidade de organização econômica e social rural.'],
+    ['Servidão','Dependência camponesa ligada à terra e ao senhorio.'],
+    ['Produção','Agricultura como base da subsistência.'],
+    ['Comunidade','Famílias e aldeias organizam trabalho e cooperação.']
+  ],'O senhorio articula economia e poder local; não é o mesmo que feudalismo.'),quiz:[{type:"mc",q:"O que caracteriza melhor o senhorio?",options:["Uma rede de alianças entre diferentes poderes políticos","Uma organização rural que articula terra, produção e obrigações","Uma corporação comercial urbana","Uma instituição religiosa ligada também a cultura e assistência"],correct:1,explain:"O senhorio organiza relações econômicas e sociais no espaço rural, articulando terra, produção e obrigações."},{type:"mc",q:"Por que a servidão não deve ser confundida automaticamente com escravidão?",options:["Porque eram formas iguais de trabalho","Porque a servidão envolvia vínculos específicos à terra e ao senhorio, distintos da escravidão","Porque servos não realizavam trabalho agrícola","Porque servos eram proprietários independentes sem obrigações"],correct:1,explain:"A servidão medieval tinha formas próprias de dependência e obrigações e não é equivalente, em definição, à escravidão."},{type:"open",q:"Explique como produção rural, obrigações e poder senhorial se relacionavam.",model:"A produção do campo sustentava a população e gerava excedentes e obrigações. O senhorio organizava o uso da terra e parte das relações de dependência, articulando economia e poder local.",terms:["senhorio","produção","dependência"]}]},
+  {id:"em-igreja",title:"Igreja, cultura e poder",sub:"Uma instituição religiosa que também organizava parte da vida social",html:`
+   <p>A Igreja medieval teve funções religiosas, culturais e institucionais. Mosteiros preservaram e produziram manuscritos; clérigos participaram da educação; e a Igreja também possuía terras e exercia autoridade em diferentes situações.</p>
+   <div class="why-box"><div class="k">Não reduza a Igreja a “religião”</div><p>Para compreender sua influência histórica, é preciso observar também <strong>terra, conhecimento, legitimidade política, instituições e redes sociais</strong>.</p></div>
+   <h4>Cultura e conhecimento</h4><p>A preservação e transmissão de textos ocorreu em diferentes espaços. Com o crescimento urbano, escolas catedrais e universidades também passaram a ganhar importância.</p>
+  `,summaryHtml:topicMap('IGREJA, CULTURA E PODER',[
+    ['Religião','Fé, rituais e orientação espiritual da sociedade.'],
+    ['Cultura','Mosteiros preservam e produzem manuscritos.'],
+    ['Terra','A Igreja também era proprietária e senhorial.'],
+    ['Legitimidade','Autoridade moral e política em diferentes contextos.']
+  ],'A Igreja atua em várias dimensões: religiosa, cultural, econômica e política.'),quiz:[{type:"mc",q:"Qual conjunto melhor explica a influência da Igreja medieval?",options:["Atividades religiosas junto a funções institucionais e culturais","Religião, terras, produção cultural, educação e formas de legitimação","Atividades ligadas ao comércio e à vida urbana","Participação institucional em educação, cultura e legitimidade"],correct:1,explain:"A Igreja teve atuação em múltiplas dimensões da sociedade, incluindo cultura, educação, terras e legitimidade."},{type:"mc",q:"Por que mosteiros são relevantes para a história cultural medieval?",options:["Porque eliminaram a escrita latina","Porque participaram da preservação e produção de manuscritos e conhecimento","Porque participaram da preservação e produção de manuscritos e conhecimento em diversos centros","Porque reuniam atividades religiosas, culturais e de organização comunitária"],correct:1,explain:"Mosteiros foram importantes centros de preservação, cópia e produção de manuscritos, entre outras atividades."},{type:"open",q:"Como conhecimento e poder se conectavam no mundo medieval?",model:"Instituições que controlavam ou produziam conhecimento também participavam da formação cultural e podiam reforçar sua autoridade social e política.",terms:["conhecimento","autoridade","cultura"]}]},
+  {id:"em-cidades",title:"Cidades, comércio e transformação",sub:"O crescimento urbano muda relações econômicas e sociais",html:`
+   <p>A partir do crescimento do comércio e de rotas locais e de longa distância, várias cidades europeias se expandiram. Mercadores, artesãos e corporações profissionais passaram a ter maior peso em certos centros urbanos.</p>
+   <div class="concept-grid"><div class="concept"><div class="t">Mercadores</div><div class="d">Conectavam regiões por meio de trocas e circulação de mercadorias.</div></div><div class="concept"><div class="t">Artesãos</div><div class="d">Produziam bens em oficinas e se organizavam profissionalmente em muitos centros.</div></div><div class="concept"><div class="t">Feiras</div><div class="d">Pontos periódicos de encontro entre compradores, vendedores e diferentes regiões.</div></div><div class="concept"><div class="t">Autonomia urbana</div><div class="d">Algumas cidades conquistaram direitos e instituições próprias em relação a poderes senhoriais.</div></div></div>
+  `,summaryHtml:topicMap('CIDADES E COMÉRCIO',[
+    ['Mercadores','Conectam regiões e circulam mercadorias.'],
+    ['Artesãos','Produzem bens e se organizam em ofícios.'],
+    ['Feiras','Pontos periódicos de troca entre regiões.'],
+    ['Autonomia','Algumas cidades conquistam direitos próprios.']
+  ],'Cidades criam novas formas de riqueza e reorganizam poder sem eliminar o mundo rural.'),quiz:[{type:"mc",q:"Qual processo ajuda a explicar a transformação econômica do final da Idade Média?",options:["Expansão de circuitos comerciais e crescimento de centros urbanos","Desaparecimento completo das trocas","Fim imediato da agricultura","Mudanças nos instrumentos e circuitos de troca"],correct:0,explain:"O aumento das trocas e o crescimento urbano alteraram relações econômicas e sociais em várias regiões."},{type:"mc",q:"Por que o crescimento das cidades afetou relações de poder?",options:["Porque centros urbanos reuniam atividades econômicas, instituições e grupos com novos interesses","Porque algumas cidades conquistaram direitos e maior capacidade de negociação","Porque o comércio eliminou o poder rural de uma vez","Porque artesãos passaram a controlar toda a Europa"],correct:0,explain:"Cidades concentravam comércio, artesanato e novos grupos sociais, criando novas formas de riqueza, organização e negociação política."},{type:"open",q:"Explique como comércio e urbanização podem alterar a estrutura social sem apagar imediatamente a sociedade rural.",model:"O comércio e as cidades criam novos grupos, atividades e formas de riqueza, mas a agricultura continua central. Assim, mudanças urbanas coexistem com estruturas rurais por bastante tempo.",terms:["comércio","urbanização","agricultura"]}]},
+  {id:"em-crise",title:"Crises do século XIV e mudanças",sub:"Peste, guerras e tensões econômicas alteram equilíbrios anteriores",html:`
+   <p>O século XIV foi marcado por crises que atingiram diferentes regiões e grupos: guerras, fome, epidemias e tensões sociais. A Peste Negra causou enorme mortalidade e afetou relações de trabalho, produção e circulação.</p>
+   <div class="cause-chain"><div class="cause-step"><strong>Crise demográfica</strong><span>Alta mortalidade reduz a população em várias regiões.</span></div><div class="cause-step"><strong>Trabalho escasso</strong><span>A menor oferta de trabalhadores modifica relações e negociações no campo.</span></div><div class="cause-step"><strong>Reorganização</strong><span>Senhorios, cidades e Estados respondem de formas diferentes às novas condições.</span></div></div>
+   <p>Essas crises não “acabaram” a Idade Média de uma vez. Elas aceleraram transformações que já vinham ocorrendo e ajudaram a alterar relações econômicas e políticas.</p>
+  `,summaryHtml:topicMap('CRISES DO SÉCULO XIV',[
+    ['Peste','Mortalidade altíssima reduz a população em várias regiões.'],
+    ['Trabalho','Menor oferta de trabalhadores altera negociações.'],
+    ['Senhorio','Formas antigas de obrigação são pressionadas.'],
+    ['Reorganização','Cidades, senhorios e Estados respondem de modos distintos.']
+  ],'As crises não encerram a Idade Média de uma vez: aceleram transformações já em curso.'),quiz:[{type:"mc",q:"Por que a Peste Negra pode ser analisada também como um fenômeno econômico e social?",options:["Porque a mortalidade alterou população, trabalho, produção e relações de dependência","Porque epidemias não produzem efeitos além da saúde","Porque a epidemia afetou simultaneamente população, trabalho e organização social","Porque a redução populacional alterou a oferta de trabalho e a produção"],correct:0,explain:"Uma queda demográfica modifica a oferta de trabalho, a produção, a renda e as relações entre grupos sociais."},{type:"mc",q:"Qual interpretação é mais adequada sobre as crises do século XIV?",options:["Elas produziram uma transformação instantânea e igual em toda a Europa","Elas interagiram com estruturas já existentes e contribuíram para mudanças graduais e desiguais","Elas não afetaram relações sociais","Elas afetaram diferentes espaços e grupos de formas desiguais"],correct:1,explain:"As consequências variaram por região e se combinaram com processos anteriores, produzindo transformações graduais e desiguais."},{type:"open",q:"Conecte crise demográfica, trabalho e poder senhorial em uma cadeia curta.",model:"A grande mortalidade reduziu a população e a oferta de trabalhadores. Isso podia aumentar o poder de negociação de trabalhadores sobreviventes e pressionar formas antigas de obrigação, embora os efeitos variassem por região.",terms:["demografia","trabalho","senhorio"]}]},
+ ],
+ flashcards:[
+  {id:"emfc1",diff:"medio",front:"Por que a transição para a Idade Média não foi uma ruptura instantânea?",back:"Porque elementos romanos permaneceram enquanto novos reinos, instituições cristãs e formas sociais se consolidavam."},
+  {id:"emfc2",diff:"medio",front:"O que a relação senhor-vassalo envolvia?",back:"Um vínculo pessoal de fidelidade e serviço, associado em determinados contextos à concessão de um feudo."},
+  {id:"emfc3",diff:"medio",front:"Qual a diferença entre feudalismo e senhorio?",back:"Feudalismo é usado principalmente para relações políticas entre elites; senhorio descreve a organização econômica e social do domínio rural."},
+  {id:"emfc4",diff:"facil",front:"Por que a Igreja tinha influência além da religião?",back:"Porque também atuava em educação, produção cultural, terras, instituições e formas de legitimidade."},
+  {id:"emfc5",diff:"medio",front:"Como o crescimento urbano mudou a sociedade medieval?",back:"Ampliou comércio, artesanato e novos grupos sociais e criou novas formas de riqueza e organização política."},
+  {id:"emfc6",diff:"dificil",front:"Como a crise demográfica do século XIV podia alterar relações de trabalho?",back:"A queda populacional reduzia a oferta de trabalhadores, podendo aumentar seu poder de negociação e pressionar obrigações anteriores."}
+ ],
+ keywords:[
+  {id:"emkw1",term:"Feudo",def:"Concessão associada a vínculos de poder e obrigações, especialmente em relações senhor-vassalo."},
+  {id:"emkw2",term:"Vassalagem",def:"Vínculo pessoal de fidelidade e serviço entre membros da elite."},
+  {id:"emkw3",term:"Senhorio",def:"Organização rural que articulava terra, produção e obrigações."},
+  {id:"emkw4",term:"Servidão",def:"Forma de dependência camponesa ligada à terra e a obrigações perante o senhorio."},
+  {id:"emkw5",term:"Cristianização",def:"Processo de expansão e consolidação do cristianismo em diferentes sociedades europeias."},
+  {id:"emkw6",term:"Peste Negra",def:"Grande pandemia do século XIV que provocou forte mortalidade e mudanças sociais e econômicas."},
+  {id:"emkw7",term:"Urbanização medieval",def:"Crescimento e transformação de centros urbanos ligados a comércio, artesanato e instituições."}
+ ]
+};
+
+const SUBJECTS_EXTRA=[EUROPA_MEDIEVAL];
+const DISCIPLINES=[
+ {id:"matematica",name:"Matemática",description:"Números, estruturas, álgebra, geometria, combinatória e resolução de problemas.",subjectIds:[]},
+ {id:"fisica",name:"Física",description:"Movimento, energia, forças, ondas, eletricidade e modelos para explicar fenômenos.",subjectIds:[]},
+ {id:"quimica",name:"Química",description:"Matéria, transformações, estrutura, energia e relações quantitativas.",subjectIds:[]},
+ {id:"historia",name:"História",description:"Processos históricos, sociedades, continuidades, rupturas e diferentes formas de interpretação.",subjectIds:["europa-medieval"]},
+ {id:"geografia",name:"Geografia",description:"Espaço, território, sociedade, natureza e sistemas físicos e humanos.",subjectIds:["climatologia"]},
+ {id:"portugues",name:"Português",description:"Língua, leitura, produção textual, análise linguística e argumentação.",subjectIds:[]},
+ {id:"literatura",name:"Literatura",description:"Obras, gêneros, escolas literárias, linguagem e leitura crítica.",subjectIds:[]},
+ {id:"espanhol",name:"Espanhol",description:"Compreensão, vocabulário, gramática e comunicação em espanhol.",subjectIds:[]},
+ {id:"ingles",name:"Inglês",description:"Compreensão, comunicação, vocabulário, gramática e leitura em inglês.",subjectIds:[]},
+ {id:"filosofia",name:"Filosofia",description:"Conceitos, argumentos, problemas filosóficos e história das ideias.",subjectIds:[]},
+ {id:"biologia",name:"Biologia",description:"Vida, evolução, ecologia, genética, fisiologia e sistemas biológicos.",subjectIds:[]}
 ];
-const BOX_INTERVALS = [1,3,7,14,30];
-const today = () => { const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
-const load = (k, fallback) => { try {
-  const current = localStorage.getItem(`${STORAGE}:${k}`);
-  if (current) return JSON.parse(current);
-  for (const legacyStorage of LEGACY_STORAGES) {
-    const legacy = localStorage.getItem(`${legacyStorage}:${k}`);
-    if (legacy) return JSON.parse(legacy);
-  }
-  return fallback;
-} catch { return fallback; } };
-const save = (k,v) => localStorage.setItem(`${STORAGE}:${k}`, JSON.stringify(v));
-const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 
-const safeArray = (x) => Array.isArray(x) ? x : [];
-
-function App(){
-  const [session,setSession] = useState(load('session',null));
-  const [authMode,setAuthMode] = useState('login');
-  const [uiMode,setUiMode] = useState(load('uiMode','desktop'));
-  const [theme,setTheme] = useState(load('theme','dark'));
-  const [page,setPage] = useState({name:'home',subjectId:null});
-  const [subjectTab,setSubjectTab] = useState('learn');
-  const [topicIdx,setTopicIdx] = useState(0);
-  const [questionIdx,setQuestionIdx] = useState(0);
-  const [answers,setAnswers] = useState({});
-  const [srs,setSrs] = useState(load('srs',{}));
-  const [openTerms,setOpenTerms] = useState({});
-  const [sidebarCollapsed,setSidebarCollapsed] = useState(load('sidebarCollapsed',false));
-  const [calendarEvents,setCalendarEvents] = useState(load('calendarEvents',[]));
-
-  useEffect(()=>save('uiMode',uiMode),[uiMode]);
-  useEffect(()=>save('theme',theme),[theme]);
-  useEffect(()=>save('srs',srs),[srs]);
-  useEffect(()=>save('sidebarCollapsed',sidebarCollapsed),[sidebarCollapsed]);
-  useEffect(()=>save('calendarEvents',calendarEvents),[calendarEvents]);
-  useLayoutEffect(()=>{
-    if(typeof window!=='undefined'){
-      try{window.history.scrollRestoration='manual';}catch{}
-      window.scrollTo({top:0,left:0,behavior:'auto'});
-    }
-  },[page.name,page.subjectId,subjectTab]);
-
-  if(!session) return <Auth mode={authMode} setMode={setAuthMode} onLogin={u=>setSession(u)}/>;
-
-  const subject = SUBJECTS.find(s=>s.id===page.subjectId) || null;
-  const goHome = () => { setPage({name:'home',subjectId:null}); setSubjectTab('learn'); };
-  const openDisciplines = () => { setPage({name:'disciplines',subjectId:null}); };
-  const openSubject = (id) => { setPage({name:'subject',subjectId:id}); setSubjectTab('learn'); setTopicIdx(0); setQuestionIdx(0); setAnswers({}); };
-  const openSettings = () => setPage({name:'settings',subjectId:null});
-  const openFlashcards = () => setPage({name:'flashcards',subjectId:null});
-  const openCalendar = () => setPage({name:'calendar',subjectId:null});
-  const openPractice = () => { setSubjectTab('practice'); setQuestionIdx(0); setAnswers({}); };
-  const openReview = () => { setSubjectTab('review'); setOpenTerms({}); };
-
-  function rateFlashcard(subjectId,id,grade){
-    setSrs(prev=>{const next=structuredClone(prev);next[subjectId] ??= {flashcards:{},keywords:{}};next[subjectId].flashcards ??= {};next[subjectId].flashcards[id]=nextReviewState(next[subjectId].flashcards[id],grade,SUBJECTS.find(s=>s.id===subjectId)?.flashcards.find(f=>f.id===id));return next;});
-  }
-
-  return <div className={`app theme-${theme} mode-${uiMode} ${sidebarCollapsed?'sidebar-collapsed':''}`}>
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="brand" onClick={goHome} aria-label="NEXO"><div className="brand-lockup"><span className="brand-n">N</span><span className="brand-exo">EXO</span></div><div className="brand-sub">estudos por conexões</div></div>
-        <button className="sidebar-toggle" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?'Expandir barra lateral':'Recolher barra lateral'}><span className="sidebar-chevron">{sidebarCollapsed?'›':'‹'}</span></button>
-        <nav className="side-nav">
-          <NavButton active={page.name==='home'} icon={<Icon name="home"/>} label="Início" onClick={goHome}/>
-          <NavButton active={page.name==='disciplines'} icon={<Icon name="disciplines"/>} label="Disciplinas" onClick={openDisciplines}/>
-          <NavButton active={page.name==='flashcards'} icon={<Icon name="flashcards"/>} label="Flashcards" onClick={openFlashcards}/>
-          <NavButton active={page.name==='calendar'} icon={<Icon name="calendar"/>} label="Calendário" onClick={openCalendar}/>
-          <NavButton active={page.name==='settings'} icon={<Icon name="settings"/>} label="Configurações" onClick={openSettings}/>
-        </nav>
-        <div className="side-foot">v6.2.4 · universal</div>
-      </aside>
-      <main className="main">
-        <header className="topbar">
-          <div className="topbar-mobile-brand"><span className="brand-word"><b>N</b><span>EXO</span></span></div>
-          <div className="topbar-actions">
-            {page.name==='subject' && <button className="ghost-btn" onClick={goHome}>← Início</button>}
-            <button className="icon-btn" onClick={openSettings} title="Configurações">⚙</button>
-          </div>
-        </header>
-        <div className="viewport">
-          {page.name==='home' && <Home subjects={SUBJECTS} onOpen={openSubject} srs={srs}/>} 
-          {page.name==='disciplines' && <Disciplines subjects={SUBJECTS} onOpen={openSubject}/>} 
-          {page.name==='flashcards' && <FlashcardsHub subjects={SUBJECTS} srs={srs} rateFlashcard={rateFlashcard}/>}
-          {page.name==='calendar' && <Calendar subjects={SUBJECTS} events={calendarEvents} setEvents={setCalendarEvents}/>} 
-          {page.name==='settings' && <Settings uiMode={uiMode} setUiMode={setUiMode} theme={theme} setTheme={setTheme}/>} 
-          {page.name==='subject' && subject && <SubjectView subject={subject} tab={subjectTab} setTab={setSubjectTab} topicIdx={topicIdx} setTopicIdx={setTopicIdx} questionIdx={questionIdx} setQuestionIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
-        </div>
-        <MobileNav page={page} onHome={goHome} onDisciplines={openDisciplines} onFlashcards={openFlashcards} onCalendar={openCalendar} onSettings={openSettings}/>
-      </main>
-    </div>
-  </div>
-}
-
-async function hashPassword(v){const data=new TextEncoder().encode(v);const hash=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-function Auth({mode,setMode,onLogin}){
-  const [name,setName]=useState(''); const [username,setUsername]=useState(''); const [password,setPassword]=useState(''); const [confirm,setConfirm]=useState(''); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
-  const submit=async e=>{e.preventDefault();setError('');if(!username.trim()||!password){setError('Preencha usuário e senha.');return}const clean=username.trim().toLowerCase();if(!/^[a-z0-9_.-]{3,24}$/.test(clean)){setError('O usuário precisa ter 3–24 caracteres e usar letras, números, ponto, hífen ou _.');return}setBusy(true);try{const users=load('users',{});const pass=await hashPassword(password);if(mode==='register'){if(!name.trim()){setError('Informe seu nome.');return}if(users[clean]){setError('Esse usuário já existe.');return}if(password!==confirm){setError('As senhas não coincidem.');return}users[clean]={name:name.trim(),username:clean,passwordHash:pass,createdAt:Date.now()};save('users',users);}else{if(!users[clean]||users[clean].passwordHash!==pass){setError('Usuário ou senha inválidos.');return}}const user=users[clean]||{};save('session',{name:user.name||clean,username:clean});onLogin({name:user.name||clean,username:clean});}finally{setBusy(false)}};
-  return <div className="auth-page"><div className="auth-wrap"><div className="auth-brand"><span className="brand-mark">N</span><div><strong>NEXO</strong><small>estudo por conexões</small></div></div><div className="auth-panel"><span className="eyebrow">{mode==='login'?'ENTRAR':'CRIAR CONTA'}</span><h1>{mode==='login'?'Volte ao seu estudo.':'Comece seu espaço de estudo.'}</h1><p>{mode==='login'?'Seu progresso fica associado ao usuário neste dispositivo.':'Sem email por enquanto. Apenas nome, usuário e senha.'}</p><form onSubmit={submit}>{mode==='register'&&<label>Nome<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" /></label>}<label>Usuário<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" /></label><label>Senha<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} /></label>{mode==='register'&&<label>Confirmar senha<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" /></label>}{error&&<div className="auth-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Entrando…':mode==='login'?'Entrar':'Criar conta'}</button></form><button className="auth-switch" onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}>{mode==='login'?'Ainda não tenho conta':'Já tenho uma conta'}</button></div><div className="auth-foot">Autenticação local · preparada para backend futuro</div></div></div>
-}
-function MobileNav({page,onHome,onDisciplines,onFlashcards,onCalendar,onSettings}){return <nav className="mobile-nav"><button className={page.name==='home'?'active':''} onClick={onHome}><Icon name="home" size={20}/>Início</button><button className={page.name==='disciplines'?'active':''} onClick={onDisciplines}><Icon name="disciplines" size={20}/>Disciplinas</button><button className={page.name==='flashcards'?'active':''} onClick={onFlashcards}><Icon name="flashcards" size={20}/>Cards</button><button className={page.name==='calendar'?'active':''} onClick={onCalendar}><Icon name="calendar" size={20}/>Agenda</button><button className={page.name==='settings'?'active':''} onClick={onSettings}><Icon name="settings" size={20}/>Config.</button></nav>}
-
-function NavButton({active,icon,label,onClick}){ return <button className={`nav-item ${active?'active':''}`} onClick={onClick}><span className="nav-icon">{icon}</span><span>{label}</span></button> }
-
-function Home({subjects,onOpen,srs}){
-  const safeSubjects = safeArray(subjects);
-  const totals = useMemo(()=>safeSubjects.reduce((a,s)=>{
-    const topics = safeArray(s?.topics);
-    const questions = safeArray(s?.questions);
-    const flashcards = safeArray(s?.flashcards);
-    const keywords = safeArray(s?.keywords);
-    a.topics += topics.length;
-    a.questions += questions.length;
-    a.cards += flashcards.length + keywords.length;
-    return a;
-  },{topics:0,questions:0,cards:0}),[safeSubjects]);
-  const due = safeSubjects.reduce((n,s)=>{
-    const flashcards = safeArray(s?.flashcards);
-    const keywords = safeArray(s?.keywords);
-    return n + flashcards.filter(f=>isDue(s.id,'flashcards',f.id,srs)).length + keywords.filter(k=>isDue(s.id,'keywords',k.id,srs)).length;
-  },0);
-  return <div className="page home-page">
-    <section className="hero-grid home-hero-clean">
-      <div><div className="eyebrow">NEXO</div><h1>Entender primeiro.<br/><em>Conectar depois.</em></h1><p>Um espaço para estudar por mecanismos, relações e recuperação ativa, sem transformar aprendizado em uma coleção de números.</p></div>
-    </section>
-    <section className="today-panel">
-      <div className="today-panel-main"><span className="eyebrow">HOJE</span><div className="today-number">{due}</div><div><h3>{due===1?'item para revisar':due>1?'itens para revisar':'tudo em dia'}</h3><p>{due?'Comece pelo que já está pronto para recuperação. A fila se reorganiza conforme seu desempenho.':'Não há itens vencidos. Você pode seguir para o conteúdo novo ou praticar.'}</p></div></div>
-      <div className="today-panel-side"><span>RECUPERAÇÃO</span><strong>{due ? 'Prioridade ativa' : 'Sem pendências'}</strong><small>O sistema ordena seus itens pelo histórico recente.</small></div>
-    </section>
-    <section className="metric-overview metric-overview-4">
-      <OverviewMetric value={safeArray(DISCIPLINES).length} label="disciplinas" />
-      <OverviewMetric value={safeSubjects.length} label="matérias ativas" />
-      <OverviewMetric value={totals.questions} label="questões" />
-      <OverviewMetric value={due} label="revisões hoje"/>
-    </section>
-    <section className="section-head home-section-head"><div><span className="eyebrow">DISCIPLINAS</span><h2>Seus estudos</h2></div><span className="section-count">{safeSubjects.length} {safeSubjects.length===1?'disciplina':'disciplinas'}</span></section>
-    <div className={`subjects-grid count-${safeSubjects.length} ${safeSubjects.length%2?'odd':''}`}>
-      {safeSubjects.map(s=><SubjectTile key={s.id} subject={s} onClick={()=>onOpen(s.id)} srs={srs}/>)}
-    </div>
-  </div>
-}
-function OverviewMetric({value,label}){return <div className="overview-metric"><strong>{value}</strong><span>{label}</span></div>}
-
-function Disciplines({subjects,onOpen}){
-  const [query,setQuery]=useState('');
-  const [open,setOpen]=useState(()=>new Set(['geografia','historia']));
-  const q=query.trim().toLowerCase();
-  const groups=safeArray(DISCIPLINES).map(d=>{const matters=safeArray(subjects).filter(s=>safeArray(d.subjectIds).includes(s.id));const match=!q||`${d.name} ${d.description} ${matters.map(s=>`${s.name} ${s.learningGoal} ${safeArray(s.topics).map(t=>t.title).join(' ')}`).join(' ')}`.toLowerCase().includes(q);return {...d,matters,match};}).filter(d=>d.match);
-  const toggle=id=>setOpen(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
-  return <div className="page disciplines-page">
-    <div className="disciplines-intro"><div><span className="eyebrow">MAPA DE ESTUDOS</span><h1 className="page-h1">Disciplinas</h1><p className="page-lead">Uma disciplina reúne matérias. A matéria organiza os capítulos e módulos que formam seu conteúdo de estudo.</p></div></div>
-    <label className="discipline-search"><span>Pesquisar</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: História, Europa Medieval, clima..." /></label>
-    <div className="discipline-groups">{groups.map(d=><section className={`discipline-group ${open.has(d.id)?'is-open':''}`} key={d.id}>
-      <button className="discipline-group-head" onClick={()=>toggle(d.id)} aria-expanded={open.has(d.id)}><div><span className="tile-tag">DISCIPLINA</span><h3>{d.name}</h3><p>{d.description}</p></div><span className="discipline-chevron">{open.has(d.id)?'−':'+'}</span></button>
-      {open.has(d.id)&&<div className="matter-list">{d.matters.length?d.matters.map(subject=><button className="matter-row" key={subject.id} onClick={()=>onOpen(subject.id)}><div><span className="tile-tag">MATÉRIA</span><h4>{subject.name}</h4><p>{subject.learningGoal}</p></div><div className="matter-meta"><span>{safeArray(subject.topics).length} módulos</span><span>{safeArray(subject.questions).length} questões</span><b>›</b></div></button>):<div className="matter-empty"><span>AINDA SEM MATÉRIA</span><strong>Conteúdo em construção.</strong><small>A disciplina já está disponível para receber novas matérias.</small></div>}</div>}
-    </section>)}</div>
-  </div>
-}
-function SubjectTile({subject,onClick,srs}){
-  const topics = safeArray(subject?.topics);
-  const questions = safeArray(subject?.questions);
-  return <button className="subject-tile" onClick={onClick}>
-    <div className="tile-top"><span className="tile-tag">{subject.tag}</span><span className="tile-arrow">↗</span></div>
-    <div className="tile-title">{subject.name}</div>
-    <p>{subject.learningGoal}</p>
-    <div className="tile-meta"><span>{topics.length} módulos</span><span>{questions.length} questões</span></div>
-  </button>
-}
-
-function isoDay(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
-function parseDay(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d,12); }
-function monthLabel(d){ return d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()); }
-function Calendar({subjects,events,setEvents}){
-  const safeSubjects = safeArray(subjects);
-  const now=new Date(); now.setHours(12,0,0,0);
-  const [cursor,setCursor]=useState(new Date(now.getFullYear(),now.getMonth(),1,12));
-  const [selected,setSelected]=useState(isoDay(now));
-  const [showForm,setShowForm]=useState(false);
-  const [notifications,setNotifications]=useState('idle');
-  const [form,setForm]=useState({title:'',date:selected,start:'',duration:'60',type:'estudo',subjectId:safeSubjects[0]?.id||'',topicId:safeSubjects[0]?.topics?.[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});
-  const first=new Date(cursor.getFullYear(),cursor.getMonth(),1,12), offset=(first.getDay()+6)%7;
-  const daysIn=new Date(cursor.getFullYear(),cursor.getMonth()+1,0,12).getDate();
-  const cells=[]; for(let i=0;i<offset;i++) cells.push(null); for(let d=1;d<=daysIn;d++) cells.push(new Date(cursor.getFullYear(),cursor.getMonth(),d,12)); while(cells.length%7) cells.push(null);
-  const safeEvents = safeArray(events);
-  const dayEvents=(day)=>safeEvents.filter(e=>e.date===isoDay(day)).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-  const selectedEvents=safeEvents.filter(e=>e.date===selected).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
-  const subject=safeSubjects.find(s=>s.id===form.subjectId)||safeSubjects[0];
-  const setField=(k,v)=>setForm(f=>{const next={...f,[k]:v}; if(k==='subjectId'){const s=safeSubjects.find(x=>x.id===v);next.topicId=s?.topics?.[0]?.id||'';} return next;});
-  const openNew=(date=selected)=>{setSelected(date);setForm({title:'',date,start:'',duration:'60',type:'estudo',subjectId:safeSubjects[0]?.id||'',topicId:safeSubjects[0]?.topics?.[0]?.id||'',notes:'',reminder:'15',repeatWeekly:false});setShowForm(true);};
-  const saveEvent=(e)=>{e.preventDefault(); if(!form.title.trim()||!form.date)return; const base=Date.now(); const dates=form.repeatWeekly?Array.from({length:8},(_,i)=>{const d=parseDay(form.date);d.setDate(d.getDate()+i*7);return isoDay(d)}):[form.date]; const created=dates.map((date,i)=>({...form,id:`ev-${base}-${i}`,date,title:form.title.trim(),createdAt:base+i,repeatWeekly:!!form.repeatWeekly})); setEvents(prev=>[...prev,...created]); setSelected(form.date); setShowForm(false);};
-  const removeEvent=(id)=>setEvents(prev=>prev.filter(e=>e.id!==id));
-  const enableNotifications=async()=>{ if(!('Notification' in window)){setNotifications('unsupported');return;} const p=await Notification.requestPermission(); setNotifications(p); if(p==='granted') new Notification('NEXO · lembretes ativos',{body:'Os lembretes serão verificados enquanto o NEXO estiver aberto.'}); };
-  useEffect(()=>{ if(!('Notification' in window)||Notification.permission!=='granted')return; const tick=()=>{const now=new Date(); safeEvents.forEach(ev=>{if(!ev.start||!ev.date)return; const start=new Date(`${ev.date}T${ev.start}:00`); start.setMinutes(start.getMinutes()-Number(ev.reminder||0)); const diff=Math.abs(now-start); if(isoDay(start)===isoDay(now)&&diff<45000&&!sessionStorage.getItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`)){new Notification(`NEXO · ${ev.title}`,{body:`Lembrete: ${ev.type==='prova'?'Prova':ev.type==='revisao'?'Revisão':ev.type==='questoes'?'Questões':'Estudo'}${ev.subjectId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.name||''):''}`});sessionStorage.setItem(`nexo:notice:${ev.id}:${ev.date}:${start.getHours()}:${start.getMinutes()}`,'1');}})}; const timer=setInterval(tick,30000); tick(); return()=>clearInterval(timer); },[safeEvents,safeSubjects]);
-  return <div className="page calendar-page">
-    <div className="page-head-row calendar-head"><div><span className="eyebrow">PLANEJAMENTO</span><h1 className="page-h1">Calendário</h1><p className="page-lead">Organize provas, módulos, questões, revisões e blocos de estudo em um único lugar.</p></div><div className="calendar-head-actions"><button className="primary-btn" onClick={()=>openNew(selected)}>+ Nova tarefa</button><button className={`secondary-btn ${notifications==='granted'?'is-active':''}`} onClick={enableNotifications}>{notifications==='granted'?'Lembretes ativos':'Ativar lembretes'}</button></div></div>
-    <section className="calendar-layout">
-      <div className="calendar-main"><div className="calendar-toolbar"><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()-1,1,12))}>‹</button><strong>{monthLabel(cursor)}</strong><button className="icon-btn" onClick={()=>setCursor(new Date(cursor.getFullYear(),cursor.getMonth()+1,1,12))}>›</button><button className="today-link" onClick={()=>{setCursor(new Date(now.getFullYear(),now.getMonth(),1,12));setSelected(isoDay(now));}}>Hoje</button></div><div className="calendar-weekdays">{['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=><span key={x}>{x}</span>)}</div><div className="calendar-grid">{cells.map((d,i)=>{const key=d?isoDay(d):`empty-${i}`; const evs=d?dayEvents(d):[]; const isSel=d&&isoDay(d)===selected; const isToday=d&&isoDay(d)===isoDay(now); return <button key={key} className={`calendar-day ${!d?'empty':''} ${isSel?'selected':''} ${isToday?'today':''}`} onClick={()=>d&&setSelected(isoDay(d))} disabled={!d}><span className="day-number">{d?d.getDate():''}</span>{d&&evs.slice(0,3).map(ev=><span key={ev.id} className={`day-event type-${ev.type}`}>{ev.start&&<b>{ev.start}</b>} {ev.title}</span>)}{d&&evs.length>3&&<small>+{evs.length-3}</small>}</button>})}</div></div>
-      <aside className="calendar-side"><div className="calendar-side-head"><div><span className="eyebrow">AGENDA DO DIA</span><h3>{parseDay(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button className="icon-btn" onClick={()=>openNew(selected)}>+</button></div>{selectedEvents.length?<div className="agenda-list">{selectedEvents.map(ev=><article className="agenda-item" key={ev.id}><div className={`agenda-dot type-${ev.type}`}></div><div className="agenda-copy"><strong>{ev.title}</strong><span>{ev.start||'Sem horário'} · {ev.duration||60} min</span>{ev.subjectId&&<small>{safeSubjects.find(s=>s.id===ev.subjectId)?.name}{ev.topicId?' · '+(safeSubjects.find(s=>s.id===ev.subjectId)?.topics?.find(t=>t.id===ev.topicId)?.title||''):''}</small>}{ev.notes&&<small>{ev.notes}</small>}</div><button className="icon-btn subtle" onClick={()=>removeEvent(ev.id)} aria-label="Excluir tarefa">×</button></article>)}</div>:<div className="calendar-empty"><strong>Sem tarefas neste dia.</strong><span>Use o calendário para reservar tempo para conteúdo, questões, revisão ou prova.</span><button className="secondary-btn" onClick={()=>openNew(selected)}>Adicionar tarefa</button></div>}</aside>
-    </section>
-    <section className="calendar-routines"><div><span className="eyebrow">ESTRUTURA DE ESTUDO</span><h3>O calendário conecta intenção e execução</h3><p>Registre o que vai estudar e a tarefa deixa de ser uma promessa solta. Ao abrir uma tarefa de estudo, o NEXO já associa disciplina e módulo.</p></div><div className="routine-points"><span><b>Estudo</b> reservar tempo para um módulo ou bloco</span><span><b>Questões</b> separar treino específico</span><span><b>Revisão</b> criar espaço para recuperação</span><span><b>Prova</b> marcar datas que mudam a prioridade</span></div></section>
-    {showForm&&<div className="calendar-modal" role="dialog" aria-modal="true"><form className="calendar-form" onSubmit={saveEvent}><div className="calendar-form-head"><div><span className="eyebrow">NOVA TAREFA</span><h3>O que você vai fazer?</h3></div><button type="button" className="icon-btn" onClick={()=>setShowForm(false)}>×</button></div><label>Título<input autoFocus value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Ex.: Módulo 4 · Fatores Climáticos"/></label><div className="form-grid-2"><label>Data<input type="date" value={form.date} onChange={e=>setField('date',e.target.value)}/></label><label>Horário<input type="time" value={form.start} onChange={e=>setField('start',e.target.value)}/></label></div><div className="form-grid-2"><label>Tipo<select value={form.type} onChange={e=>setField('type',e.target.value)}><option value="estudo">Estudo</option><option value="questoes">Questões</option><option value="revisao">Revisão</option><option value="prova">Prova</option><option value="rotina">Rotina</option></select></label><label>Duração<input type="number" min="5" step="5" value={form.duration} onChange={e=>setField('duration',e.target.value)}/></label></div><div className="form-grid-2"><label>Disciplina<select value={form.subjectId} onChange={e=>setField('subjectId',e.target.value)}>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Módulo<select value={form.topicId} onChange={e=>setField('topicId',e.target.value)}>{safeArray(subject?.topics).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></label></div><label>Observação<textarea value={form.notes} onChange={e=>setField('notes',e.target.value)} placeholder="O que exatamente você pretende fazer?"/></label><div className="form-grid-2"><label>Lembrete<select value={form.reminder} onChange={e=>setField('reminder',e.target.value)}><option value="0">No horário</option><option value="15">15 min antes</option><option value="30">30 min antes</option><option value="60">1 h antes</option></select></label><label className="calendar-check"><span>Repetição</span><span><input type="checkbox" checked={!!form.repeatWeekly} onChange={e=>setField('repeatWeekly',e.target.checked)}/> repetir toda semana por 8 semanas</span></label></div><div className="calendar-form-actions"><button type="button" className="secondary-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button type="submit" className="primary-btn">Salvar tarefa</button></div><small className="calendar-disclaimer">Lembretes usam a API de notificações do navegador e são verificados enquanto o NEXO estiver aberto.</small></form></div>}
-  </div>
-}
-
-function Settings({uiMode,setUiMode,theme,setTheme}){
-  return <div className="page settings-page">
-    <div className="eyebrow">SISTEMA</div><h1 className="page-h1">Configurações</h1><p className="page-lead">A interface se adapta sem mudar o conteúdo. Suas preferências ficam salvas neste dispositivo.</p>
-    <section className="settings-group"><div className="setting-title">Dispositivo</div><div className="setting-desc">Escolha qual experiência você quer priorizar, independentemente da largura da tela.</div><div className="choice-grid">
-      <Choice active={uiMode==='desktop'} onClick={()=>setUiMode('desktop')} icon="▣" title="Computador" desc="Painel amplo, navegação lateral e leitura em coluna larga."/>
-      <Choice active={uiMode==='mobile'} onClick={()=>setUiMode('mobile')} icon="▯" title="Celular" desc="Uma coluna, toque, navegação compacta e leitura focada."/>
-    </div></section>
-    <section className="settings-group"><div className="setting-title">Aparência</div><div className="setting-desc">O tema altera superfícies, textos, controles, diagramas e estados da interface.</div><div className="choice-grid">
-      <Choice active={theme==='dark'} onClick={()=>setTheme('dark')} icon="◐" title="Escuro" desc="Contraste profundo para uso noturno."/>
-      <Choice active={theme==='light'} onClick={()=>setTheme('light')} icon="○" title="Claro" desc="Superfícies claras para leitura durante o dia."/>
-    </div></section>
-    <div className="settings-note"><strong>Arquitetura atual</strong><span>React + Vite · estado local persistente · preparado para backend e sincronização futuros.</span></div>
-  </div>
-}
-function Choice({active,onClick,icon,title,desc}){return <button className={`choice ${active?'active':''}`} onClick={onClick}><span className="choice-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span>{active && <b>✓</b>}</button>}
-
-function SubjectView({subject,tab,setTab,topicIdx,setTopicIdx,questionIdx,setQuestionIdx,answers,setAnswers,srs,rateFlashcard,openTerms,setOpenTerms}){
-  return <div className="page subject-page">
-    <div className="subject-head"><div><span className="eyebrow">{subject.discipline || subject.tag}</span><h1 className="page-h1">{subject.name}</h1><p className="page-lead">{subject.learningGoal}</p></div><div className="subject-stat"><strong>{safeArray(subject.topics).length}</strong><span>módulos</span></div></div>
-    <div className="tabs"><button className={tab==='learn'?'active':''} onClick={()=>setTab('learn')}>Aprender</button><button className={tab==='practice'?'active':''} onClick={()=>setTab('practice')}>Praticar</button><button className={tab==='review'?'active':''} onClick={()=>setTab('review')}>Revisar</button></div>
-    {tab==='learn' && <Learn subject={subject} topicIdx={topicIdx} setTopicIdx={setTopicIdx}/>} 
-    {tab==='practice' && <Practice subject={subject} idx={questionIdx} setIdx={setQuestionIdx} answers={answers} setAnswers={setAnswers}/>} 
-    {tab==='review' && <Review subject={subject} srs={srs} rateFlashcard={rateFlashcard} openTerms={openTerms} setOpenTerms={setOpenTerms}/>} 
-  </div>
-}
-
-function Learn({subject,topicIdx,setTopicIdx}){
-  const topics = safeArray(subject.topics);
-  const topic = topics[topicIdx] || topics[0];
-  const firstRender=useRef(true);
-  const [quizAnswers,setQuizAnswers]=useState({});
-  const [modulesCollapsed,setModulesCollapsed]=useState(false);
-  useEffect(()=>{
-    const root=document.querySelector('.subject-summary');
-    if(!root) return;
-    const nodes=root.querySelectorAll('.mind-node[data-topic]');
-    const handler=e=>{
-      const node=e.currentTarget;
-      const i=Number(node.dataset.topic);
-      if(Number.isFinite(i) && i<topics.length) setTopicIdx(i);
-    };
-    const keyHandler=ev=>{
-      if(ev.key==='Enter'||ev.key===' '){
-        ev.preventDefault();
-        handler({currentTarget: ev.currentTarget});
-      }
-    };
-    nodes.forEach(n=>{
-      n.addEventListener('click',handler);
-      n.addEventListener('keydown',keyHandler);
-    });
-    return ()=>nodes.forEach(n=>{
-      n.removeEventListener('click',handler);
-      n.removeEventListener('keydown',keyHandler);
-    });
-  },[topicIdx,subject,topics.length]);
-  useEffect(()=>{setQuizAnswers({});},[topicIdx]);
-  useEffect(()=>{
-    if(firstRender.current){ firstRender.current=false; return; }
-    requestAnimationFrame(()=>{
-      const title=document.querySelector('.study-pane h2');
-      if(!title) return;
-      const top=title.getBoundingClientRect().top + window.scrollY - (window.innerWidth<=900 ? 92 : 70);
-      window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
-    });
-  },[topicIdx]);
-  if(!topic){
-    return <div className="learn-layout"><div className="study-pane"><div className="study-intro"><span className="study-intro-label">SEM CONTEÚDO</span><h2>Esta matéria ainda não tem módulos.</h2><p className="topic-sub">Adicione tópicos em <code>src/content.js</code> para começar.</p></div></div></div>;
-  }
-  const miniQuiz=safeArray(topic.quiz).slice(0,4);
-  const progress=topics.length ? ((topicIdx+1)/topics.length)*100 : 0;
-  return <div className={`learn-layout ${modulesCollapsed?'modules-collapsed':''}`}>
-    <aside className="module-index" aria-label="Módulos">
-      <div className="module-index-head">
-        <div><div className="module-index-title">Módulos</div><span>{topicIdx+1} de {topics.length}</span></div>
-        <button className="module-collapse-btn icon-only" onClick={()=>setModulesCollapsed(v=>!v)} aria-label={modulesCollapsed?'Mostrar nomes dos módulos':'Ocultar nomes dos módulos'} title={modulesCollapsed?'Expandir módulos':'Recolher módulos'}><span>{modulesCollapsed?'›':'‹'}</span></button>
-      </div>
-      <div className="module-index-progress"><i style={{width:`${progress}%`}}/></div>
-      <div className="module-index-list">
-        {topics.map((t,i)=><button key={t.id} className={i===topicIdx?'active':''} onClick={()=>setTopicIdx(i)} title={t.title} aria-label={`Módulo ${i+1}: ${t.title}`}><span>{String(i+1).padStart(2,'0')}</span><em>{t.title}</em></button>)}
-      </div>
-    </aside>
-    <div className="mobile-module-picker">
-      <label htmlFor="module-picker">Módulo atual</label>
-      <select id="module-picker" value={topicIdx} onChange={e=>setTopicIdx(Number(e.target.value))}>
-        {topics.map((t,i)=><option key={t.id} value={i}>{String(i+1).padStart(2,'0')} · {t.title}</option>)}
-      </select>
-    </div>
-    <div className="study-pane">
-      <div className="study-kicker-row"><div className="module-meta"><span>MÓDULO {String(topicIdx+1).padStart(2,'0')} / {topics.length}</span><span>APRENDER</span></div><span className="study-progress-label">{Math.round(progress)}%</span></div>
-      <div className="study-intro">
-        <span className="study-intro-label">IDEIA-GUIA</span>
-        <h2>{topic.title}</h2>
-        <p className="topic-sub">{topic.sub}</p>
-      </div>
-      <div className="study-content new-study-surface" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.html||'')}} />
-      {topic.summaryHtml && <div className="subject-summary" dangerouslySetInnerHTML={{__html:adaptThemeHtml(topic.summaryHtml)}} />}
-      {miniQuiz.length>0 && <section className="module-check redesigned-check"><div className="module-check-head"><div><span className="eyebrow">RECUPERAÇÃO ATIVA</span><h3>Antes de seguir</h3><p>Recupere a ideia principal sem voltar ao texto. O objetivo é testar o entendimento, não reconhecer a frase.</p></div><span>{miniQuiz.length} questões</span></div><div className="module-check-list">{miniQuiz.map((q,i)=><ModuleQuestion key={`${topic.id}-${i}`} q={q} answer={quizAnswers[i]} onAnswer={(v)=>setQuizAnswers(prev=>({...prev,[i]:v}))}/>)}</div></section>}
-      <div className="module-nav"><button disabled={topicIdx===0} onClick={()=>setTopicIdx(i=>Math.max(0,i-1))}>← Anterior</button><button disabled={topicIdx===topics.length-1} onClick={()=>setTopicIdx(i=>Math.min(topics.length-1,i+1))}>Próximo módulo →</button></div>
-    </div>
-  </div>
-}
-function stableOptionOrder(q){
-  const options = safeArray(q.options);
-  const items=options.map((text,index)=>({text,index}));
-  let seed=[...(q.q||'')].reduce((a,c)=>((a*31+c.charCodeAt(0))>>>0),2166136261);
-  for(let i=items.length-1;i>0;i--){ seed=(seed*1664525+1013904223)>>>0; const j=seed%(i+1); [items[i],items[j]]=[items[j],items[i]]; }
-  return {options:items.map(x=>x.text),originalIndex:items.map(x=>x.index),correct:items.findIndex(x=>x.index===q.correct),feedbackOrder:items.map(x=>x.index)};
-}
-function getOptionFeedback(q, originalIndex, feedback){
-  if(feedback && feedback[originalIndex]) return feedback[originalIndex];
-  if(originalIndex===q.correct) return q.explain;
-  return `A alternativa escolhida não corresponde ao mecanismo pedido aqui. Compare-a com a alternativa destacada e com a explicação da resposta correta.`;
-}
-function ModuleQuestion({q,answer,onAnswer}){
-  if(q.type==='open') return <article className="module-question open-module-question"><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4><textarea value={answer?.value||''} onChange={e=>onAnswer({value:e.target.value,show:false})} placeholder="Responda com suas palavras..."/><button className="module-answer-link" onClick={()=>onAnswer({value:answer?.value||'',show:!answer?.show})}>{answer?.show?'Ocultar resposta-modelo':'Ver resposta-modelo'}</button>{answer?.show&&<div className="module-model"><strong>Uma boa resposta</strong><p>{q.model}</p></div>}</article>;
-  const view=stableOptionOrder(q); const chosen=answer?.value; const revealed=chosen!==undefined; const feedback=OPTION_FEEDBACK[q.q]||[];
-  return <article className="module-question"><div className="module-question-top"><div><div className="module-question-index">FIXAÇÃO</div><h4>{q.q}</h4></div>{revealed&&<span className={chosen===view.correct?'mini-status good':'mini-status bad'}>{chosen===view.correct?'Certo':'Reveja'}</span>}</div><div className="module-question-options">{view.options.map((o,i)=>{const original=view.originalIndex[i];return <button key={i} disabled={revealed} className={`mini-option ${revealed&&i===view.correct?'correct':''} ${revealed&&chosen===i&&i!==view.correct?'wrong':''}`} onClick={()=>onAnswer({value:i})}><span>{String.fromCharCode(65+i)}</span>{o}</button>})}</div>{revealed&&<div className={`module-feedback ${chosen===view.correct?'is-correct':'is-wrong'}`}><strong>{chosen===view.correct?'Correto · Por quê?':'Sua resposta · o que revisar'}</strong><p>{getOptionFeedback(q,view.originalIndex[chosen],feedback)}</p>{chosen!==view.correct&&<><strong className="feedback-answer-label">Resposta correta</strong><p>{getOptionFeedback(q,q.correct,feedback)}</p></>}</div>}</article>
-}
-
-function Practice({subject,idx,setIdx,answers,setAnswers}){
-  const qs=safeArray(subject.questions); const q=qs[idx]||qs[0]; const answered=answers[idx];
-  if(!q) return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Sem questões</h2><p>Esta matéria ainda não tem questões de prática.</p></div></div></div>;
-  return <div className="practice-pane"><div className="practice-head"><div><span className="eyebrow">PRÁTICA</span><h2>Teste de entendimento</h2><p>Questões desenhadas para separar reconhecimento de compreensão.</p></div><span>{idx+1} / {qs.length}</span></div>
-    <div className="progress-track"><div style={{width:`${((idx+1)/qs.length)*100}%`}}/></div>
-    <article className="question-card"><div className="q-kind">{q.challenge?'INTEGRAÇÃO':'FIXAÇÃO'} · {q.type==='open'?'RESPOSTA ABERTA':'MÚLTIPLA ESCOLHA'}</div><h3>{q.q}</h3>
-      {q.type==='open' ? <OpenQuestion q={q} answered={answered} onAnswer={(v)=>setAnswers({...answers,[idx]:{value:v,show:answered?.show||false}})} /> : <MCQuestion q={q} answered={answered} onAnswer={(v)=>setAnswers({...answers,[idx]:v})}/>} 
-    </article>
-    <div className="question-nav"><button disabled={idx===0} onClick={()=>setIdx(i=>i-1)}>←</button><button disabled={idx===qs.length-1} onClick={()=>setIdx(i=>i+1)}>Próxima →</button></div>
-  </div>
-}
-const OPTION_FEEDBACK={
-  "Uma estação registra 34 °C e chuva intensa em uma tarde. Qual conclusão é mais defensável?": [
-    "Essa observação descreve um estado momentâneo da atmosfera. Uma única tarde não define o clima de uma cidade.",
-    "Correto. Tempo descreve as condições atmosféricas em uma escala curta; clima exige séries mais longas e padrões estatísticos.",
-    "Uma chuva intensa isolada não prova uma mudança climática. Para atribuição climática, é preciso analisar probabilidades e contexto físico e estatístico.",
-    "Temperatura é uma variável usada tanto na descrição do tempo quanto do clima. O que muda é a escala e a forma de análise."
-  ],
-  "Uma cidade teve três anos seguidos acima da média histórica. Qual análise seria mais adequada antes de afirmar uma mudança permanente?": [
-    "Um único ano recente não fornece contexto suficiente para avaliar uma tendência. Comparar apenas com o último ano pode esconder a variabilidade.",
-    "Correto. É necessário olhar séries mais longas, variabilidade, tendências e outros indicadores antes de concluir que houve uma mudança permanente.",
-    "Anos extremos continuam sendo dados válidos. O ponto é contextualizá-los estatisticamente, não descartá-los.",
-    "A maior temperatura registrada é apenas um extremo. Ela não substitui a análise de médias, variabilidade e séries temporais."
-  ],
-  "Duas cidades têm a mesma temperatura média anual, mas uma possui verões e invernos muito mais contrastantes. Qual medida ajuda diretamente a perceber essa diferença?": [
-    "Correto. A amplitude térmica mostra a diferença entre valores de temperatura e pode revelar contrastes que uma média anual esconde.",
-    "Pressão atmosférica pode variar com tempo e altitude, mas não mede diretamente o contraste sazonal de temperatura descrito.",
-    "Latitude influencia a distribuição de energia, mas duas cidades podem ter latitudes semelhantes ou respostas térmicas diferentes. Não é a medida pedida.",
-    "Precipitação anual isolada informa quantidade de chuva, não o contraste entre temperaturas de verão e inverno."
-  ],
-  "Depois que ar úmido sobe ao encontrar uma serra, ocorre resfriamento e formação de nuvens. Que mecanismo de precipitação está mais diretamente envolvido?": [
-    "A convecção envolve aquecimento e ascensão do ar, mas aqui o gatilho destacado é a barreira do relevo.",
-    "Correto. A chuva orográfica ocorre quando o relevo força a ascensão do ar, favorecendo resfriamento, condensação e precipitação.",
-    "Chuva frontal depende do encontro entre massas de ar com características diferentes. A serra, neste caso, é o mecanismo principal.",
-    "O sistema pode envolver baixa pressão, mas a descrição da subida forçada por uma serra identifica diretamente o mecanismo orográfico."
-  ],
-  "Em qual camada ocorrem a maior parte das nuvens, chuvas e outros fenômenos meteorológicos próximos à superfície?": [
-    "A estratosfera fica acima da troposfera e concentra a maior parte do ozônio, não a maior parte do tempo meteorológico cotidiano.",
-    "Correto. A troposfera é a camada inferior e concentra a maior parte do vapor d’água e da dinâmica associada ao tempo meteorológico.",
-    "A mesosfera está muito acima da região onde se concentra a maior parte dos fenômenos meteorológicos próximos à superfície.",
-    "A exosfera é a camada mais externa e extremamente rarefeita, muito distante das condições do tempo meteorológico cotidiano."
-  ],
-  "Qual sequência apresenta as camadas principais da atmosfera a partir da superfície?": [
-    "Correto. A ordem é troposfera, estratosfera, mesosfera, termosfera e exosfera.",
-    "A estratosfera vem depois da troposfera, portanto a sequência começa fora de ordem.",
-    "Mesosfera e estratosfera estão invertidas e a ordem final também não corresponde à organização vertical convencional.",
-    "Essa sequência está invertida: a exosfera é a mais externa, não a camada mais próxima da superfície."
-  ],
-  "Por que conhecer a estrutura vertical da atmosfera ajuda na climatologia?": [
-    "As camadas não têm comportamento idêntico. Precisamente por isso, tratá-las como uniformes levaria a conclusões erradas.",
-    "Correto. Temperatura, composição e processos variam com a altitude, então separar as camadas ajuda a relacionar cada processo ao contexto correto.",
-    "A exosfera não é a única camada relevante. Processos de clima e tempo envolvem principalmente a atmosfera inferior e suas interações.",
-    "A altitude pode alterar temperatura, pressão, composição e dinâmica. Portanto, dizer que ela não altera processos está incorreto."
-  ],
-  "Por que a proximidade do oceano tende a reduzir a amplitude térmica?": [
-    "A água não troca energia de forma simplesmente rápida; sua grande capacidade térmica faz com que aqueça e esfrie mais lentamente.",
-    "Correto. O oceano armazena e libera energia lentamente, amortecendo variações de temperatura próximas a ele.",
-    "O litoral não recebe necessariamente menos radiação solar. A explicação principal está na resposta térmica da água.",
-    "O oceano não impede a circulação. Ele influencia temperatura, umidade e circulação, mas o ponto central aqui é sua capacidade térmica."
-  ],
-  "Um deserto costeiro pode ser muito seco mesmo estando próximo do oceano. Qual combinação ajuda a explicar esse caso?": [
-    "Correto. Correntes frias e condições atmosféricas estáveis podem reduzir convecção e favorecer aridez, mesmo perto de uma grande fonte de água.",
-    "A maritimidade pode elevar a umidade disponível, mas não elimina circulação e estabilidade atmosférica; estar no litoral não garante chuva.",
-    "Latitude participa do balanço energético, mas dizer que ela não tem qualquer relação é incorreto e também não explica sozinha o caso.",
-    "Albedo altera a reflexão de radiação, mas não produz chuva diretamente. É outro mecanismo físico."
-  ],
-  "Em um sistema de baixa pressão, qual processo favorece a formação de nuvens e chuva?": [
-    "Subsidência é movimento descendente e tende a dificultar nuvens profundas, não favorecê-las.",
-    "Correto. Convergência próxima à superfície favorece ascensão; o ar que sobe esfria e pode atingir saturação, formando nuvens e chuva.",
-    "O vapor d’água é justamente um componente importante para condensação e precipitação. Sua ausência não favorece chuva.",
-    "A descida do ar tende a estabilizar a atmosfera e dificultar convecção profunda, portanto não é a cadeia mais adequada."
-  ],
-  "O que caracteriza uma frente fria?": [
-    "Essa descrição corresponde a uma frente quente, não a uma frente fria.",
-    "Correto. Na frente fria, uma massa de ar mais frio avança e força o ar quente a subir, podendo gerar nuvens e precipitação.",
-    "Alta pressão parada sobre o oceano não define uma frente fria.",
-    "Um ciclone tropical pode interagir com frentes em certos contextos, mas atravessar montanhas não é a definição de frente fria."
-  ],
-  "O que caracteriza o El Niño no Pacífico equatorial?": [
-    "Esse quadro corresponde ao resfriamento associado à La Niña, não ao El Niño.",
-    "Correto. El Niño envolve aquecimento anômalo do Pacífico equatorial central e leste, acompanhado de mudanças atmosféricas.",
-    "O ENSO não aquece todos os oceanos de forma uniforme. O sinal característico está concentrado no Pacífico equatorial.",
-    "El Niño pertence ao sistema do Pacífico; não é definido por uma alteração isolada no Atlântico."
-  ],
-  "Qual relação entre El Niño e La Niña está correta?": [
-    "Eles não são o mesmo estado: representam fases diferentes do ENSO.",
-    "Correto. El Niño e La Niña são fases quente e fria, respectivamente, de um sistema acoplado oceano-atmosfera do Pacífico.",
-    "As duas fases podem ocorrer em diferentes épocas do ano; a distinção não é definida por uma estação fixa.",
-    "Ambas fazem parte do ENSO no Pacífico, não uma em cada oceano."
-  ],
-  "Qual cadeia representa melhor uma parte importante da intensificação de um ciclone tropical?": [
-    "Correto. Oceano quente favorece evaporação; a condensação libera calor latente e ajuda a sustentar convecção e circulação.",
-    "Água fria tende a reduzir evaporação e não explica fortalecimento automático de um ciclone tropical.",
-    "Solo seco não fornece a fonte oceânica de energia que sustenta a convecção de um ciclone tropical.",
-    "Subsidência associada à alta pressão tende a inibir convecção, portanto não descreve a intensificação proposta."
-  ],
-  "Por que um ciclone tropical tende a não se organizar exatamente sobre o Equador?": [
-    "Há oceanos atravessados pelo Equador. A existência ou ausência de oceano não explica o limite de organização ciclônica.",
-    "Correto. O efeito de Coriolis é muito fraco perto do Equador para fornecer a organização rotacional necessária ao sistema.",
-    "O ar pode subir no Equador; a questão é a organização da circulação em rotação, não a impossibilidade de movimento ascendente.",
-    "As águas equatoriais podem ser quentes. O problema não é a temperatura do oceano ser sempre baixa, mas o ambiente dinâmico."
-  ],
-  "Qual cadeia explica melhor o aquecimento global antropogênico?": [
-    "Correto. Atividades humanas elevam gases de efeito estufa; isso altera o balanço de energia e contribui para o aquecimento do sistema climático.",
-    "Mais chuva não é a cadeia física fundamental apresentada, e reduzir CO₂ não produz aquecimento direto desse modo.",
-    "Vento não é a causa central do aquecimento global antropogênico, e menos vapor não descreve o mecanismo de efeito estufa.",
-    "Menor radiação recebida não aumenta retenção de energia. A mudança relevante envolve a interação da radiação infravermelha com gases de efeito estufa."
-  ],
-  "Por que um evento extremo isolado não deve ser atribuído automaticamente à mudança climática?": [
-    "O clima influencia extremos. O ponto é que um evento isolado não permite atribuir sua ocorrência automaticamente a uma única causa.",
-    "Correto. Cada extremo resulta de contexto local e circulação, enquanto a mudança climática pode alterar probabilidades e intensidades; isso exige atribuição adequada.",
-    "Eventos extremos podem ser observados e estudados. A dificuldade está em separar variabilidade, causas e alterações de probabilidade.",
-    "Temperatura média é importante, mas extremos dependem também de circulação, umidade, solo, oceano e outros fatores."
-  ]
-};
-function MCQuestion({q,answered,onAnswer}){
-  const view=stableOptionOrder(q);
-  const feedback=OPTION_FEEDBACK[q.q] || [];
-  const selectedOriginal = answered===undefined ? undefined : view.originalIndex[answered];
-  return <div className="options"><div className="options-grid">{view.options.map((o,i)=>{const selected=i===answered; const revealed=answered!==undefined; const cls=`option ${revealed&&i===view.correct?'correct':''} ${revealed&&selected&&i!==view.correct?'wrong':''} ${selected?'selected':''} ${revealed&&!selected&&i!==view.correct?'muted-option':''}`; return <button key={i} className={cls} disabled={revealed} onClick={()=>onAnswer(i)}><span>{String.fromCharCode(65+i)}</span><em>{o}</em>{revealed&&i===view.correct&&<b className="option-result">✓</b>}{revealed&&selected&&i!==view.correct&&<b className="option-result">×</b>}</button>})}</div>
-    {answered!==undefined && <div className={`feedback ${answered===view.correct?'is-correct':'is-wrong'}`}><strong>{answered===view.correct?'Correto.':'Vamos revisar esta escolha.'}</strong><span>{getOptionFeedback(q,selectedOriginal,feedback)}</span>{answered!==view.correct && <div className="feedback-correct"><b>Por que a correta funciona</b><span>{getOptionFeedback(q,q.correct,feedback)}</span></div>}</div>}
-  </div>
-}
-
-function OpenQuestion({q,answered,onAnswer}){const [v,setV]=useState(answered?.value||'');const [show,setShow]=useState(false); return <div className="open-wrap"><textarea value={v} onChange={e=>{setV(e.target.value);onAnswer(e.target.value)}} placeholder="Escreva com suas próprias palavras..."/><button className="secondary-btn" onClick={()=>setShow(!show)}>{show?'Ocultar resposta-modelo':'Comparar com resposta-modelo'}</button>{show&&<div className="model-answer"><strong>Resposta-modelo</strong><p>{q.model}</p><div className="term-list">{safeArray(q.terms).map(t=><span key={t}>{t}</span>)}</div></div>}</div>}
-
-function localDateFromToday(days){
-  const d=new Date();
-  d.setHours(12,0,0,0);
-  d.setDate(d.getDate()+days);
-  const p=n=>String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
-}
-function daysLate(due){
-  if(!due) return 0;
-  const a=new Date(`${due}T12:00:00`), b=new Date(`${today()}T12:00:00`);
-  return Math.round((b-a)/86400000);
-}
-function reviewRank(state,card){
-  const box=state?.box??0;
-  const lapses=state?.lapses??0;
-  const stability=state?.stability??BOX_INTERVALS[Math.min(box,BOX_INTERVALS.length-1)]??1;
-  const difficulty=state?.difficulty??({facil:0.25,medio:0.5,dificil:0.75}[card?.diff]??0.5);
-  const dueToday=!state?.due || state.due<=today();
-  const overdue=Math.max(0,daysLate(state?.due));
-  if(!state) return {label:'nova',priority:5,score:160+difficulty*20};
-  if(dueToday && (lapses>=2 || box===0)) return {label:'prioridade alta',priority:5,score:145+overdue*4+lapses*12+difficulty*8};
-  if(dueToday) return {label:'prioridade',priority:4,score:108+overdue*5+(4-box)*9+difficulty*7};
-  if(!dueToday && box>=4 && stability>=30 && difficulty<0.45) return {label:'descanso',priority:1,score:12};
-  return {label:'consolidação',priority:3,score:58+(4-box)*7+difficulty*10};
-}
-function nextReviewState(prev,grade,card){
-  const fallbackStability=prev?.stability ?? BOX_INTERVALS[Math.min(prev?.box??0,BOX_INTERVALS.length-1)] ?? 1;
-  const fallbackDifficulty=prev?.difficulty ?? ({facil:0.25,medio:0.5,dificil:0.75}[card?.diff]??0.5);
-  const cur=prev||{box:0,due:null,reviews:0,streak:0,lapses:0,ease:2.5,stability:1,difficulty:fallbackDifficulty};
-  const n={...cur,reviews:(cur.reviews||0)+1,lastGrade:grade};
-  if(grade==='again'){
-    n.box=0;n.streak=0;n.lapses=(cur.lapses||0)+1;n.ease=clamp((cur.ease||2.5)-0.22,1.3,3.3);
-    n.difficulty=clamp(fallbackDifficulty+0.09,0.1,0.95);n.stability=1;n.due=today();
-  }else if(grade==='hard'){
-    n.box=clamp(cur.box||0,0,4);n.streak=0;n.ease=clamp((cur.ease||2.5)-0.06,1.3,3.3);
-    n.difficulty=clamp(fallbackDifficulty+0.03,0.1,0.95);n.stability=clamp(fallbackStability*1.18,1,365);
-    n.due=localDateFromToday(Math.max(1,Math.round(n.stability*0.55)));
-  }else if(grade==='good'){
-    n.box=clamp((cur.box||0)+1,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.05,1.3,3.3);
-    n.difficulty=clamp(fallbackDifficulty-0.025,0.1,0.95);n.stability=clamp(fallbackStability*(2.0+(1-fallbackDifficulty)*0.55),1,365);
-    n.due=localDateFromToday(Math.max(1,Math.round(n.stability)));
-  }else{
-    n.box=clamp((cur.box||0)+2,0,4);n.streak=(cur.streak||0)+1;n.ease=clamp((cur.ease||2.5)+0.10,1.3,3.3);
-    n.difficulty=clamp(fallbackDifficulty-0.06,0.1,0.95);n.stability=clamp(fallbackStability*(3.0+(1-fallbackDifficulty)*0.8),1,365);
-    n.due=localDateFromToday(Math.max(1,Math.round(n.stability)));
-  }
-  return n;
-}
-function FlashcardsHub({subjects,srs,rateFlashcard}){
-  const [query,setQuery]=useState('');
-  const [subjectFilter,setSubjectFilter]=useState('all');
-  const [focus,setFocus]=useState(null);
-  const [expanded,setExpanded]=useState(false);
-  const safeSubjects = safeArray(subjects);
-  const filtered=useMemo(()=>{
-    const pool=safeSubjects.flatMap(subject=>safeArray(subject.flashcards).map(card=>({subject,card}))).filter(({subject,card})=>{
-      const okSubject=subjectFilter==='all'||subject.id===subjectFilter;
-      const q=query.trim().toLowerCase();
-      return okSubject && (!q||`${subject.name} ${card.front} ${card.back}`.toLowerCase().includes(q));
-    });
-    return pool.sort((a,b)=>reviewRank(srs?.[a.subject.id]?.flashcards?.[a.card.id],a.card).score < reviewRank(srs?.[b.subject.id]?.flashcards?.[b.card.id],b.card).score ? 1 : -1);
-  },[safeSubjects,srs,query,subjectFilter]);
-  const visible=expanded?filtered:filtered.slice(0,8);
-  return <div className="page flashcards-hub-page">
-    <div className="page-head-row"><div><span className="eyebrow">MEMÓRIA ATIVA</span><h1 className="page-h1">Flashcards</h1><p className="page-lead">Uma coletânea única para revisar por disciplina ou trabalhar a fila geral de recuperação.</p></div><div className="hub-count"><b>{filtered.length}</b><span>cards encontrados</span></div></div>
-    <div className="flash-hub-controls"><label>Pesquisar<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Termo, pergunta ou disciplina..." /></label><label>Disciplina<select value={subjectFilter} onChange={e=>setSubjectFilter(e.target.value)}><option value="all">Todas</option>{safeSubjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label></div>
-    <section className="flash-hub-section"><div className="flash-hub-list">{visible.map(({subject,card})=>{const state=srs?.[subject.id]?.flashcards?.[card.id];const rank=reviewRank(state,card);return <article key={`${subject.id}:${card.id}`} className="flash-hub-row"><div><span className="tile-tag">{subject.name}</span><strong>{card.front}</strong><small>{rank.label} · caixa {(state?.box??0)+1}/5</small></div><button className="secondary-btn" onClick={()=>setFocus({subject,card})}>Abrir</button></article>})}{!filtered.length&&<div className="empty-state"><strong>Nenhum flashcard encontrado.</strong><span>Altere a pesquisa ou o filtro.</span></div>}</div>{filtered.length>visible.length&&<button className="review-more" onClick={()=>setExpanded(true)}>Mostrar mais {filtered.length-visible.length}</button>}</section>
-    {focus&&<FlashModal card={focus.card} index={Math.max(0,visible.findIndex(x=>x.card.id===focus.card.id))} total={filtered.length} state={srs?.[focus.subject.id]?.flashcards?.[focus.card.id]} rank={reviewRank(srs?.[focus.subject.id]?.flashcards?.[focus.card.id],focus.card)} onClose={()=>setFocus(null)} onNext={()=>{}} onPrev={()=>{}} onRate={(grade)=>rateFlashcard(focus.subject.id,focus.card.id,grade)}/>} 
-  </div>
-}
-
-function Review({subject,srs,rateFlashcard,openTerms,setOpenTerms}){
-  const cards=safeArray(subject.flashcards); const keywords=safeArray(subject.keywords);
-  const [focusId,setFocusId]=useState(null); const [cardsExpanded,setCardsExpanded]=useState(false); const [termFocus,setTermFocus]=useState(null);
-  const rankedCards=useMemo(()=>[...cards].sort((a,b)=>{const ra=reviewRank(srs?.[subject.id]?.flashcards?.[a.id],a),rb=reviewRank(srs?.[subject.id]?.flashcards?.[b.id],b);return rb.score-ra.score}),[cards,srs,subject.id]);
-  const visibleCards=cardsExpanded?rankedCards:rankedCards.slice(0,Math.min(4,rankedCards.length));
-  const focusIndex=focusId===null ? -1 : rankedCards.findIndex(c=>c.id===focusId); const focusCard=focusIndex>=0?rankedCards[focusIndex]:null;
-  const closeFocus=()=>setFocusId(null); const stepFocus=(dir)=>{if(!rankedCards.length)return;const next=(focusIndex+dir+rankedCards.length)%rankedCards.length;setFocusId(rankedCards[next].id)};
-  useEffect(()=>{if(focusId===null)return;const onKey=e=>{if(e.key==='Escape')closeFocus();if(e.key==='ArrowRight')stepFocus(1);if(e.key==='ArrowLeft')stepFocus(-1)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[focusId,focusIndex,rankedCards.length]);
-  const dueCards=rankedCards.filter(c=>{const st=srs?.[subject.id]?.flashcards?.[c.id];return !st?.due||st.due<=today()}).length;
-  const high=rankedCards.filter(c=>reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c).priority>=4).length;
-  const resting=rankedCards.filter(c=>reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c).label==='descanso').length;
-  const goPrevTerm=()=>{if(!termFocus)return;const i=keywords.findIndex(k=>k.id===termFocus.id);setTermFocus(keywords[(i-1+keywords.length)%keywords.length])};
-  const goNextTerm=()=>{if(!termFocus)return;const i=keywords.findIndex(k=>k.id===termFocus.id);setTermFocus(keywords[(i+1)%keywords.length])};
-  return <div className="review-pane">
-    <div className="review-hero"><div><span className="eyebrow">REVISAR</span><h2>Recuperar, não reler.</h2><p>A ordem se adapta ao seu desempenho. O que você domina descansa; o que falha volta para perto.</p></div><div className="review-stats"><span><b>{dueCards}</b> hoje</span><span><b>{high}</b> prioridade</span><span><b>{resting}</b> em descanso</span></div></div>
-    <section className="review-section"><div className="review-section-head"><div><span className="eyebrow">FLASHCARDS</span><h3>Memória ativa</h3><p>Comece pelos itens com maior necessidade de recuperação.</p></div><button className="collapse-btn" onClick={()=>setCardsExpanded(v=>!v)}>{cardsExpanded?'Ocultar lista':'Ver mais cards'} · {cards.length}</button></div>
-      <div className={`flash-grid ${cardsExpanded?'expanded':''}`}>{visibleCards.map(c=>{const rank=reviewRank(srs?.[subject.id]?.flashcards?.[c.id],c);return <Flash key={c.id} card={c} state={srs?.[subject.id]?.flashcards?.[c.id]} rank={rank} onOpen={()=>setFocusId(c.id)}/>})}</div>
-      {!cardsExpanded && cards.length>visibleCards.length && <button className="review-more" onClick={()=>setCardsExpanded(true)}>+ {cards.length-visibleCards.length} cards</button>}
-    </section>
-    <section className="review-section terms-section"><div className="review-section-head"><div><span className="eyebrow">CONCEITOS</span><h3>Termos essenciais</h3><p>Abra um termo e percorra a sequência sem fechar a janela.</p></div><span>{keywords.length} itens</span></div><div className="keyword-list">{keywords.map(k=><article className="keyword" key={k.id}><button onClick={()=>setTermFocus(k)}><span>{k.term}</span><span>↗</span></button></article>)}</div></section>
-    {focusCard && <FlashModal card={focusCard} index={focusIndex} total={rankedCards.length} state={srs?.[subject.id]?.flashcards?.[focusCard.id]} rank={reviewRank(srs?.[subject.id]?.flashcards?.[focusCard.id],focusCard)} onClose={closeFocus} onNext={()=>stepFocus(1)} onPrev={()=>stepFocus(-1)} onRate={(grade)=>rateFlashcard(subject.id,focusCard.id,grade)}/>} 
-    {termFocus && <TermModal term={termFocus} index={keywords.findIndex(k=>k.id===termFocus.id)} total={keywords.length} onClose={()=>setTermFocus(null)} onNext={goNextTerm} onPrev={goPrevTerm} />}
-  </div>
-}
-function Flash({card,state,rank,onOpen}){return <article className={`flash-card priority-${rank?.priority||3}`}><div className="flash-card-head"><span className="flash-tag">CAIXA {(state?.box??0)+1}/5</span><span className="rank-pill">{rank?.label||'nova'}</span></div><button className="flash-face" onClick={onOpen}><span className="flash-label">TENTE LEMBRAR</span><strong>{card.front}</strong><span className="flash-open">Abrir em foco</span></button></article>}
-function FlashModal({card,index,total,state,rank,onClose,onNext,onPrev,onRate}){const [flip,setFlip]=useState(false);const [rated,setRated]=useState(null);useEffect(()=>{setFlip(false);setRated(null)},[card.id]);const register=(grade)=>{onRate(grade);setRated(grade)};return <div className="flash-modal" role="dialog" aria-modal="true" aria-label="Flashcard em foco" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="flash-modal-panel"><div className="flash-modal-top"><div><span className="flash-modal-count">FLASHCARD {index+1} / {total}</span><span className="modal-rank">{rank.label}</span></div><button className="icon-btn" onClick={onClose} aria-label="Fechar">×</button></div><div className="flash-modal-card"><div className="flash-tag">CAIXA {(state?.box??0)+1}/5 · {state?.reviews||0} revisões</div><button className={`flash-face flash-face-large ${flip?'flipped':''}`} onClick={()=>setFlip(v=>!v)}><span className="flash-label">{flip?'RESPOSTA':'TENTE LEMBRAR'}</span><strong>{flip?card.back:card.front}</strong><span className="flash-hint">{flip?'Clique para voltar à pergunta.':'Clique para revelar a resposta.'}</span></button>{flip&&<div className="flash-rating"><span>Avalie a dificuldade desta lembrança</span><div><button className="rate-again" onClick={()=>register('again')} disabled={!!rated}>Não lembrei</button><button className="rate-hard" onClick={()=>register('hard')} disabled={!!rated}>Difícil</button><button className="rate-good" onClick={()=>register('good')} disabled={!!rated}>Lembrei</button><button className="rate-easy" onClick={()=>register('easy')} disabled={!!rated}>Fácil</button></div>{rated&&<div className="rating-saved">✓ Registrado. A fila será reorganizada pela próxima revisão.</div>}</div>}</div><div className="flash-modal-nav"><button className="secondary-btn" onClick={onPrev}>Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo</button></div></div></div>}
-function TermModal({term,index,total,onClose,onNext,onPrev}){return <div className="term-modal" role="dialog" aria-modal="true" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div className="term-modal-panel"><div className="flash-modal-top"><span className="flash-modal-count">CONCEITO {index+1} / {total}</span><button className="icon-btn" onClick={onClose}>×</button></div><span className="eyebrow">TERMO ESSENCIAL</span><h3>{term.term}</h3><p>{term.def}</p><div className="term-modal-nav"><button className="secondary-btn" onClick={onPrev}>← Anterior</button><button className="secondary-btn" onClick={onNext}>Próximo →</button></div></div></div>}
-
-function isDue(sid,kind,id,srs){const x=srs?.[sid]?.[kind]?.[id]; return !x?.due || x.due<=today();}
-function adaptThemeHtml(html){
-  const map={'#F8F7F1':'var(--diagram-surface)','#374151':'var(--diagram-ink)','#5B6472':'var(--diagram-muted)','#D7DCE4':'var(--diagram-line)','#9AA4B3':'var(--diagram-line)','#6B7280':'var(--diagram-muted)','#475569':'var(--diagram-muted)','#3F5F9C':'var(--diagram-blue)','#5E87E8':'var(--diagram-blue)','#EAF0FF':'var(--diagram-blue-soft)','#EEF3FF':'var(--diagram-blue-soft)','#E3F3EB':'var(--diagram-green-soft)','#23835A':'var(--diagram-green)','#245E44':'var(--diagram-green-ink)','#E8F3DE':'var(--diagram-green-soft)','#346D45':'var(--diagram-green-ink)','#F9EED9':'var(--diagram-amber-soft)','#72551B':'var(--diagram-amber-ink)','#B77B19':'var(--diagram-amber)','#F8E1E1':'var(--diagram-red-soft)','#7B3434':'var(--diagram-red-ink)','#EEE9FA':'var(--diagram-purple-soft)','#4B3D74':'var(--diagram-purple-ink)','#CBD2DE':'var(--diagram-line)','#697384':'var(--diagram-muted)','#DDEBF4':'var(--diagram-blue-soft)','#315E78':'var(--diagram-blue-ink)'};
-  return Object.entries(map).reduce((out,[a,b])=>out.replaceAll(a,b),html||'');
-}
-
-createRoot(document.getElementById('root')).render(<App/>);
+const ALL_SUBJECTS=[...SUBJECTS,...SUBJECTS_EXTRA];
+export { ALL_SUBJECTS as SUBJECTS, DISCIPLINES };
